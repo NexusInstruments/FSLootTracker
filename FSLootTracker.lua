@@ -500,6 +500,12 @@ end
 function FSLootTracker:OnQualityBtnUnchecked( wndHandler, wndControl, eMouseButton )
 end
 
+function FSLootTracker:OnSessionsFlyoutChecked( wndHandler, wndControl, eMouseButton )
+end
+
+function FSLootTracker:OnSessionsFlyoutUnchecked( wndHandler, wndControl, eMouseButton )
+end
+
 -----------------------------------------------------------------------------------------------
 -- ItemList Functions
 -----------------------------------------------------------------------------------------------
@@ -988,4 +994,17 @@ end
 FSLootTrackerInst = FSLootTracker:new()
 FSLootTrackerInst:Init()
 
+
+
+---------------------------------------------------------------------------------------------------
+-- ListSession Functions
+---------------------------------------------------------------------------------------------------
+function FSLootTracker:OnSessionItemClick( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	if eMouseButton == 0 and bDoubleClick then -- Double Left Click
+		-- Open Edit Description
+	end
+	if eMouseButton == 1 then -- Right Clicked
+		-- Open Context Dialog
+	end
+end
 
