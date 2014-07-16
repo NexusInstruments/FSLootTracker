@@ -3,8 +3,9 @@ JsonUtils
 
 A Wildstar Embeded LUA library to Encode LUA objects into JSON strings
 
-This Addon is a partial port of Jeffery Friedl's JSON Lua library
-See licensing information at the end
+This Addon is a partial port of Jeffery Friedl's JSON Lua library.
+
+See licensing information at the end.
 
 
 
