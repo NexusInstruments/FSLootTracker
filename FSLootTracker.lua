@@ -222,21 +222,21 @@ end
 -- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
-	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
-	if strWinner ~= GameLib.GetPlayerUnit():GetName() then
-		local tNewEntry =
-		{
-			recordType = karDataTypes.item,
-			item = itemLooted,
-			nCount = 1,
-			looter = strWinner,
-			cost = self.defaultCost,
-			fTimeAdded = GameLib.GetGameTime(),
-			fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
-		}
-		table.insert(self.tQueuedEntryData, tNewEntry)
-		self.fLastTimeAdded = GameLib.GetGameTime()	
-	end	
+	--self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
+	--if strWinner ~= GameLib.GetPlayerUnit():GetName() then
+	--	local tNewEntry =
+	--	{
+	--		recordType = karDataTypes.item,
+	--		item = itemLooted,
+	--		nCount = 1,
+	--		looter = strWinner,
+	--		cost = self.defaultCost,
+	--		fTimeAdded = GameLib.GetGameTime(),
+	--		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
+	--	}
+	--	table.insert(self.tQueuedEntryData, tNewEntry)
+	--	self.fLastTimeAdded = GameLib.GetGameTime()	
+	--end	
 	self.hooks[Apollo.GetAddon("NeedVsGreed")].OnLootRollWon(itemLooted, strWinner, bNeed)
 end
 
@@ -958,6 +958,7 @@ function FSLootTracker:OnConfirmDelete( wndHandler, wndControl, eMouseButton )
 end
 
 function FSLootTracker:OnCancelDelete( wndHandler, wndControl, eMouseButton )
+
 end
 
 
