@@ -24,7 +24,7 @@ JSONDecode
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
   
-  local jsonStr = "[{"a":1,"b":"string","c":{"a":1,"b":"string"},"d":null}]"
+  local jsonStr = "[{\"a\":1,\"b\":\"string\",\"c\":{\"a\":1,\"b\":\"string\"},\"d\":null}]"
 
   local tNewTable = self:JSONEncode(jsonStr)
 ```
