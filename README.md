@@ -2,10 +2,7 @@ JsonUtils
 =========
 A Wildstar Embeded LUA library to Decode/Encode JSON data - LUA tables.
 
-This can be very helpful when needing to export or save data inside the add-on data storage/settings. Or useful when you want to transport encoded data between add-ons or between client through the use of in-game comm-channels.
-
-This Addon is a partial port of Jeffery Friedl's JSON Lua library.
-See licensing information at the end.
+This can be very helpful when needing to export or save data inside the add-on data storage/settings. Or useful when you want to transport encoded data between add-ons or between clients through the use of in-game comm-channels.
 
 Usage
 =====
