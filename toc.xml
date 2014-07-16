@@ -4,4 +4,5 @@
     <Form Name="FSLootTracker.xml"/>
     <Script Name="lib/JsonUtils-1.0.lua"/>
     <Script Name="lib/GeminiHook-1.0.lua"/>
+	<Script Name="lib/TimeUtils-1.0.lua"/>
 </Addon>

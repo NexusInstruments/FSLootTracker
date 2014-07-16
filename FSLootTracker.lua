@@ -181,6 +181,7 @@ end
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootedMoney(monLooted)
 	local eCurrencyType = monLooted:GetMoneyType()
+	Print(self:Encode(GameLib.GetLocalTime()))
 	--self:Debug("Money Looted: " .. eCurrencyType:GetName())
 	local tNewEntry =
 	{
@@ -189,7 +190,7 @@ function FSLootTracker:OnLootedMoney(monLooted)
 		nCount = nil,
 		looter = nil,
 		fTimeAdded = GameLib.GetGameTime(),
-		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']
+		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()		
@@ -222,6 +223,7 @@ end
 -- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
+	self:PrintProps(itemLooted)
 	--self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
 	--if strWinner ~= GameLib.GetPlayerUnit():GetName() then
 	--	local tNewEntry =
@@ -488,7 +490,7 @@ function FSLootTracker:OnExportData( wndHandler, wndControl, eMouseButton )
 	if not FSLootTrackerInst.wndExport then
 		FSLootTrackerInst.wndExport = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ExportWindow", nil, FSLootTrackerInst)
 		-- TODO: EXPORT DATA HERE AND INSERT IT INTO THE FORM
-		local exportStr = self:Encode(FSLootTrackerInst.tItemsExport)
+		local exportStr = self:JSONEncode(FSLootTrackerInst.tItemsExport)
 		FSLootTrackerInst.wndExport:FindChild("ExportString"):SetText(exportStr)
 		FSLootTrackerInst.wndExport:Show(true)
 	end
@@ -565,7 +567,6 @@ end
 function FSLootTracker:RebuildExportList()
 	self.tItemsExport = {}
 	for idx, itemInstance in ipairs(self.tItems) do
-	
 		local tNewEntry =
 		{
 			itemName = itemInstance.item:GetName(),
