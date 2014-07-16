@@ -21,7 +21,6 @@ Usage
    
   local exportStr = self:Encode(tNewTable)
 ```
-
 Results
 ```
 [{"a":1,"b":"string","c":{"a":1,"b":"string"},"d":null}]
