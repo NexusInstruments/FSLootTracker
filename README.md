@@ -23,7 +23,7 @@ JSONDecode
   
   local jsonStr = "[{\"a\":1,\"b\":\"string\",\"c\":{\"a\":1,\"b\":\"string\"},\"d\":null}]"
 
-  local tNewTable = self:JSONEncode(jsonStr)
+  local tNewTable = self:JSONDecode(jsonStr)
 ```
 Results
 ```
