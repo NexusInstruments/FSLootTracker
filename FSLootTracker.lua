@@ -181,7 +181,7 @@ end
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootedMoney(monLooted)
 	local eCurrencyType = monLooted:GetMoneyType()
-	Print(self:Encode(GameLib.GetLocalTime()))
+	--Print(self:JSONEncode(GameLib.GetLocalTime()))
 	--self:Debug("Money Looted: " .. eCurrencyType:GetName())
 	local tNewEntry =
 	{
@@ -223,23 +223,19 @@ end
 -- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
-	self:PrintProps(itemLooted)
-	--self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
-	--if strWinner ~= GameLib.GetPlayerUnit():GetName() then
-	--	local tNewEntry =
-	--	{
-	--		recordType = karDataTypes.item,
-	--		item = itemLooted,
-	--		nCount = 1,
-	--		looter = strWinner,
-	--		cost = self.defaultCost,
-	--		fTimeAdded = GameLib.GetGameTime(),
-	--		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
-	--	}
-	--	table.insert(self.tQueuedEntryData, tNewEntry)
-	--	self.fLastTimeAdded = GameLib.GetGameTime()	
-	--end	
-	self.hooks[Apollo.GetAddon("NeedVsGreed")].OnLootRollWon(itemLooted, strWinner, bNeed)
+	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
+	local tNewEntry =
+	{
+		recordType = karDataTypes.item,
+		item = itemLooted,
+		nCount = 1,
+		looter = strWinner,
+		cost = self.defaultCost,
+		fTimeAdded = GameLib.GetGameTime(),
+		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
+	}
+	table.insert(self.tQueuedEntryData, tNewEntry)
+	self.fLastTimeAdded = GameLib.GetGameTime()	
 end
 
 -----------------------------------------------------------------------------------------------
@@ -332,23 +328,24 @@ function FSLootTracker:OnLoad()
 
 	-- Library Embeds
 	Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
-	Apollo.GetPackage("Gemini:Hook-1.0").tPackage:Embed(self)
+	--Apollo.GetPackage("Gemini:Hook-1.0").tPackage:Embed(self)
 	
 	-- initialize loot event
 	Apollo.RegisterEventHandler("Generic_ToggleLoot", "OnLootTrackerOn", self)
 	Apollo.RegisterEventHandler("LootedItem", "OnLootedItem", self)
 	Apollo.RegisterEventHandler("LootedMoney", "OnLootedMoney", self)
 	Apollo.RegisterEventHandler("LootAssigned", "OnLootAssigned", self)
+	Apollo.RegisterEventHandler("LootRollWon", "OnLootRollWon", self)
 	Apollo.RegisterTimerHandler("LootStackUpdate", "OnLootStackUpdate", self)
 	Apollo.RegisterEventHandler("CombatLogLoot", "OnCombatLogLoot", self)
 	Apollo.RegisterEventHandler("InterfaceMenuListHasLoaded", "OnInterfaceMenuListHasLoaded", self)
 	Apollo.CreateTimer("LootStackUpdate", 0.1, true)
 
 	 -- Hooks
-    self.addonNeedVsGreed = Apollo.GetAddon("NeedVsGreed")
-    if self.addonNeedVsGreed ~= nil then
-        self:RawHook(self.addonNeedVsGreed , "OnLootRollWon")
-    end
+    --self.addonNeedVsGreed = Apollo.GetAddon("NeedVsGreed")
+    --if self.addonNeedVsGreed ~= nil then
+    --    self:RawHook(self.addonNeedVsGreed , "OnLootRollWon")
+    --end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -996,8 +993,7 @@ end
 FSLootTrackerInst = FSLootTracker:new()
 FSLootTrackerInst:Init()
 
-
-
+---------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 -- ListSession Functions
 ---------------------------------------------------------------------------------------------------

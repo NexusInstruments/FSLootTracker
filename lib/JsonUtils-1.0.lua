@@ -14,8 +14,8 @@ JsonUtils.embeded = JsonUtils.embeded or {}
 
 -- upgrading of embeded is done at the bottom of the file
 local mixins = {
-	"PrintProps", "onEncodeError", "JSONDecode",
-	"JSONEncode", "JSONEncodePretty"
+	"PrintProps", "onDecodeError", "onEncodeError", 
+	"JSONDecode", "JSONEncode", "JSONEncodePretty"
 }   
 
 local isArray  = { __tostring = function() return "JSON array"  end }    isArray.__index  = isArray
@@ -85,7 +85,7 @@ local function object_or_array(self, T, etc)
       -- It's not ideal, but we'll turn the numbers into strings so that we can at least create a JSON object.
       --
 
-      if JSON.noKeyConversion then
+      if JsonUtils.noKeyConversion then
          self:onEncodeError("a table with both numeric and string keys could be an object or array; aborting", etc)
       end
 
@@ -643,7 +643,7 @@ function JsonUtils:PrintProps(o, b)
 	
 	if type(o) == table then
 		for key,value in pairs(o) do
-			Print(strBase .. "." .. key .. ":" .. printProp(value, key));
+			Print(strBase .. "." .. key .. ":" .. JsonUtils:PrintProp(value, key));
 		end
 	else
 		return o
