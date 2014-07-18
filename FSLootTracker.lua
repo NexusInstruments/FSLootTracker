@@ -28,10 +28,21 @@ local karDataTypes = {
 	money = 2
 }
 
+local karItemQualityNames = {
+	["Inferior"] = Item.CodeEnumItemQuality.Inferior,
+	["Average"] = Item.CodeEnumItemQuality.Average,
+	["Good"] = Item.CodeEnumItemQuality.Good,
+	["Excellent"] = Item.CodeEnumItemQuality.Excellent, 
+	["Superb"] = Item.CodeEnumItemQuality.Superb,
+	["Legendary"] = Item.CodeEnumItemQuality.Legendary,
+	["Artifact"] = Item.CodeEnumItemQuality.Artifact,  	
+}
+
 local karItemQuality = 
 {
 	[Item.CodeEnumItemQuality.Inferior] = 
   	{
+		Name			= "Inferior",
 		Color			= "ItemQuality_Inferior",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Silver",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Silver",
@@ -41,6 +52,7 @@ local karItemQuality =
 	},
 	[Item.CodeEnumItemQuality.Average] = 
 	{
+		Name			= "Average",
 		Color		   	= "ItemQuality_Average",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_White",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_White",
@@ -50,6 +62,7 @@ local karItemQuality =
  	},
 	[Item.CodeEnumItemQuality.Good]	=
 	{
+		Name			= "Good",	
 		Color		   	= "ItemQuality_Good",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Green",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Green",
@@ -59,6 +72,7 @@ local karItemQuality =
   	},
 	[Item.CodeEnumItemQuality.Excellent] =   
 	{
+		Name			= "Excellent",	
 		Color		   	= "ItemQuality_Excellent",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Blue",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Blue",
@@ -68,6 +82,7 @@ local karItemQuality =
 	},
 	[Item.CodeEnumItemQuality.Superb] = 
   	{
+		Name			= "Superb",
 		Color		   	= "ItemQuality_Superb",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Purple",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Purple",
@@ -77,6 +92,7 @@ local karItemQuality =
  	},
 	[Item.CodeEnumItemQuality.Legendary] = 
   	{
+		Name			= "Legendary",	
 		Color		   	= "ItemQuality_Legendary",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Orange",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Orange",
@@ -86,6 +102,7 @@ local karItemQuality =
   	},
 	[Item.CodeEnumItemQuality.Artifact] =   
   	{
+		Name			= "Artifact",	
 		Color		   	= "ItemQuality_Artifact",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Pink",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Pink",
@@ -94,6 +111,35 @@ local karItemQuality =
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Pink",
 	},
 }
+
+local tDefaultOptions = {
+	defaultCost = 0,
+	timeFormat = "12h", 
+	dateFormat = "MM/DD/YYYY",
+	qualityFilters = {
+		[Item.CodeEnumItemQuality.Inferior] = false,
+		[Item.CodeEnumItemQuality.Average] = false,
+		[Item.CodeEnumItemQuality.Good]	= false,
+		[Item.CodeEnumItemQuality.Excellent] = false, 
+		[Item.CodeEnumItemQuality.Superb] = false,
+		[Item.CodeEnumItemQuality.Legendary] = false,
+		[Item.CodeEnumItemQuality.Artifact] = false
+	}
+}
+
+function shallowcopy(orig)
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        copy = {}
+        for orig_key, orig_value in pairs(orig) do
+            copy[orig_key] = orig_value
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -105,6 +151,7 @@ function FSLootTracker:new(o)
 
 	-- initialize variables here
 	--o.fLastTimeAdded = GameLib.GetGameTime()	-- last time the stack queue was updates
+	o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
 	o.fFirstLoot = nil			-- first time Loot occurred this session
 	o.fLastLoot = nil			-- last time Loot occurred this session
 	o.fLastTimeAdded = 0		-- last time the stack queue was updates
@@ -118,7 +165,6 @@ function FSLootTracker:new(o)
 	o.wndEditWindow = nil
 	o.curItemCount = 0			-- current count of items in the item track
 	o.curMoneyCount = 0			-- current count of money items logged
-	o.defaultCost = 0			-- Default DKP cost to assign to an item
 	o.stats = {
 		totalMoney = 0,
 		perHourMoney = 0,
@@ -129,7 +175,6 @@ function FSLootTracker:new(o)
 	o.isOpen = false			-- current window state   
 	o.debug = false
 	
-	o.config = {}	
 	o.wndLastItemControl = nil
 
 	return o
@@ -165,12 +210,13 @@ function FSLootTracker:OnLootedItem(itemInstance, count)
 	local tNewEntry =
 	{
 		recordType = karDataTypes.item,
+		itemID = itemInstance:GetItemId(),
 		item = itemInstance,
 		nCount = count,
 		looter = GameLib.GetPlayerUnit():GetName(),
-		cost = self.defaultCost,		
+		cost = self.tConfig.defaultCost,		
 		fTimeAdded = GameLib.GetGameTime(),
-		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
+		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -190,7 +236,7 @@ function FSLootTracker:OnLootedMoney(monLooted)
 		nCount = nil,
 		looter = nil,
 		fTimeAdded = GameLib.GetGameTime(),
-		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
+		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()		
@@ -207,12 +253,13 @@ function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
 		local tNewEntry =
 		{
 			recordType = karDataTypes.item,
+			itemID = itemInstance:GetItemId(),
 			item = itemInstance,
 			nCount = 1,
 			looter = strLooter,
-			cost = self.defaultCost,
+			cost = self.tConfig.defaultCost,
 			fTimeAdded = GameLib.GetGameTime(),
-			fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
+			timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 		}
 		table.insert(self.tQueuedEntryData, tNewEntry)
 		self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -227,12 +274,13 @@ function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
 	local tNewEntry =
 	{
 		recordType = karDataTypes.item,
+		itemID = itemInstance:GetItemId(),
 		item = itemLooted,
 		nCount = 1,
 		looter = strWinner,
-		cost = self.defaultCost,
+		cost = self.tConfig.defaultCost,
 		fTimeAdded = GameLib.GetGameTime(),
-		fTimeReported = GameLib.GetLocalTime()['strFormattedTime']		
+		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -284,14 +332,17 @@ function FSLootTracker:AddQueuedItem()
 	local fCurrTime = now
 	if tQueuedData.recordType == karDataTypes.item then
 		self:Debug("Item was added")
-		table.insert(self.tItems, tQueuedData)
-		-- Track Junk value
 		local item = tQueuedData.item
 		local iQuality = item:GetItemQuality() or 1
+		-- Only add items of quality not being filtered
+		if self.tConfig.qualityFilters[iQuality] ~= true then
+			table.insert(self.tItems, tQueuedData)
+		end
+		-- Track Junk value
 		if iQuality == Item.CodeEnumItemQuality.Inferior then
 			self.stats.junkValue = self.stats.junkValue + item:GetSellPrice():GetAmount()
 			self:RefreshStats()
-		end		
+		end
 	elseif tQueuedData.recordType == karDataTypes.money then
 		self:Debug("Money was added")
 		table.insert(self.tMoneys, tQueuedData)
@@ -314,7 +365,7 @@ end
 -- FSLootTracker AddQueuedItem
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnInterfaceMenuListHasLoaded()
-	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "FSLootTracker", {"Generic_ToggleLoot", "", "CRB_GuildSprites:sprGuild_Chest"})
+	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "FSLootTracker", {"Generic_ToggleLoot", "", "FSLootSprites:TransChestSmall"})
 	--self:UpdateInterfaceMenuAlerts()
 end
 
@@ -322,6 +373,9 @@ end
 -- FSLootTracker OnLoad
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLoad()
+	-- Load custom sprite sheet
+	Apollo.LoadSprites("FSLootSprites.xml")
+	
 	-- load our form file
 	self.xmlDoc = XmlDoc.CreateFromFile("FSLootTracker.xml")
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
@@ -341,7 +395,7 @@ function FSLootTracker:OnLoad()
 	Apollo.RegisterEventHandler("InterfaceMenuListHasLoaded", "OnInterfaceMenuListHasLoaded", self)
 	Apollo.CreateTimer("LootStackUpdate", 0.1, true)
 
-	 -- Hooks
+	-- Hooks
     --self.addonNeedVsGreed = Apollo.GetAddon("NeedVsGreed")
     --if self.addonNeedVsGreed ~= nil then
     --    self:RawHook(self.addonNeedVsGreed , "OnLootRollWon")
@@ -352,7 +406,6 @@ end
 -- FSLootTracker OnDocLoaded
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnDocLoaded()
-
 	if self.xmlDoc ~= nil and self.xmlDoc:IsLoaded() then
 		self.wndMain = Apollo.LoadForm(self.xmlDoc, "LootTrackerForm", nil, self)
 		--self.wndLootOpts = Apollo.LoadForm(self.xmlDoc, "OptionsContainer", wndParent, self)
@@ -360,6 +413,7 @@ function FSLootTracker:OnDocLoaded()
 			Apollo.AddAddonErrorText(self, "Could not load the main window for some reason.")
 			return
 		end
+		self.wndSessions = Apollo.LoadForm(self.xmlDoc, "SessionsForm", nil, self)
 		
 		-- item list
 		self.wndLootOpts = self.wndMain:FindChild("OptionsContainer")
@@ -371,10 +425,15 @@ function FSLootTracker:OnDocLoaded()
 		self.wndAvgCash = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("CashDisplay")
 		self.wndJunkCash = self.wndMoneyWindow:FindChild("JunkValue"):FindChild("CashDisplay")	
 		self.wndMostCash = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("CashDisplay")
+
+		self.editConfigCosts = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureCosts"):FindChild("EditBox")
+		self.editConfigTypes = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTypes"):FindChild("QualityBtns")		
 		
 		self.wndMain:Show(false, true)
+		self.wndSessions:Show(false)
 		self.wndLootOpts:Show(false)
 		self:RefreshStats()
+		self:InitConfigUI()
 
 		self.wndItemList:Show(true)
 		self.wndMoneyWindow:Show(true)
@@ -480,7 +539,13 @@ end
 
 
 function FSLootTracker:OnOptionsToggle( wndHandler, wndControl, eMouseButton )
-	self.wndLootOpts:FindChild("OptionsContainer"):Show(self.wndMain:FindChild("ConfigButton"):IsChecked())
+	local state = self.wndMain:FindChild("ConfigButton"):IsChecked()
+	self.wndLootOpts:FindChild("OptionsContainer"):Show(state)
+	if state then 
+		self.editConfigCosts:SetText(self.tConfig.defaultCost)
+	else
+		self.tConfig.defaultCost = self.editConfigCosts:GetText()
+	end
 end
 
 function FSLootTracker:OnExportData( wndHandler, wndControl, eMouseButton )
@@ -494,20 +559,25 @@ function FSLootTracker:OnExportData( wndHandler, wndControl, eMouseButton )
 end
 
 function FSLootTracker:OnQualityBtnChecked( wndHandler, wndControl, eMouseButton )
+	local name = wndControl:GetName()
+	local qualEnum = karItemQualityNames[name]
+	FSLootTrackerInst.tConfig.qualityFilters[qualEnum] = true
 end
 
 function FSLootTracker:OnQualityBtnUnchecked( wndHandler, wndControl, eMouseButton )
+	local name = wndControl:GetName()
+	local qualEnum = karItemQualityNames[name]
+	FSLootTrackerInst.tConfig.qualityFilters[karItemQualityNames[name]] = false
 end
 
 function FSLootTracker:OnSessionsFlyoutChecked( wndHandler, wndControl, eMouseButton )
+	FSLootTrackerInst.wndSessions:Show(true)
 end
 
 function FSLootTracker:OnSessionsFlyoutUnchecked( wndHandler, wndControl, eMouseButton )
+	FSLootTrackerInst.wndSessions:Show(false)
 end
 
------------------------------------------------------------------------------------------------
--- ItemList Functions
------------------------------------------------------------------------------------------------
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker ClearLists
 -----------------------------------------------------------------------------------------------
@@ -537,11 +607,11 @@ end
 function FSLootTracker:RebuildLists()
 	self:EmptyLists()
 	for idx,item in ipairs(self.tItems) do
-		self:AddItem(idx, item.item, item.nCount, item.looter, item.fTimeAdded, item.fTimeReported)
+		self:AddItem(idx, item.item, item.nCount, item.looter, item.fTimeAdded, item.timeReported)
 		self.curItemCount = self.curItemCount + 1
 	end
 	for idx,money in ipairs(self.tMoneys) do
-		self:AddMoney(idx, money.item, money.fTimeAdded, money.fTimeReported)
+		self:AddMoney(idx, money.item, money.fTimeAdded, money.timeReported)
 		self.curMoneyCount = self.curMoneyCount + 1
 	end 
 	self:RebuildExportList()
@@ -575,7 +645,7 @@ function FSLootTracker:RebuildExportList()
 			looter = itemInstance.looter,
 			cost = itemInstance.cost,
 			gameTimeAdded = itemInstance.fTimeAdded,
-			timeReported = itemInstance.fTimeReported
+			timeReported = itemInstance.timeReported
 		}
 		table.insert(self.tItemsExport, tNewEntry)			
 	end
@@ -841,7 +911,7 @@ function FSLootTracker:OnEditBtnClicked( wndHandler, wndControl, eMouseButton )
 	local wndItemTimestamp = FSLootTrackerInst.wndEditWindow:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
 		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText("Looted at " .. data.fTimeReported)
+		wndItemTimestamp:SetText("Looted at " .. data.timeReported)
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
 	
@@ -883,35 +953,6 @@ end
 function FSLootTracker:OnOptionsCloseClick( wndHandler, wndControl, eMouseButton )
 	self.wndMain:FindChild("ConfigButton"):SetCheck(false)
 	self:OnOptionsToggle()
-end
-
-function FSLootTracker:OnQualityDropdownToggle( wndHandler, wndControl, eMouseButton )
-	if FSLootTrackerInst.wndSubMenu and FSLootTrackerInst.wndSubMenu:GetParent() == wndControl then
-		if not wndControl:IsChecked() and FSLootTrackerInst.wndSubMenu then
-			FSLootTrackerInst.wndSubMenu:Destroy()
-		end
-		return
-	end
-	if not FSLootTrackerInst.wndSubMenu then
-		FSLootTrackerInst.wndSubMenu = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "QualityMenu", wndControl, FSLootTrackerInst)
-	end
-	if FSLootTrackerInst.wndSubMenu then
-		if wndControl:IsChecked() then 
-			FSLootTrackerInst.wndSubMenu:Show(false)
-		else
-			FSLootTrackerInst.wndSubMenu:Show(true)
-		end
-	end
-end
-
-function FSLootTracker:OnCheckboxChange( wndHandler, wndControl, eMouseButton )
-	local wndControlName = wndControl:GetName()
-	self.config[wndControlName] = wndControl:IsChecked()
-	-- Special cases, aren't they special?
-	-- If we turn on AutoSell, or change the showButton setting, honor it.
-	if wndControlName == "autoSell" then
-		wndControl:FindChild("showButton"):Show(self.config.autoSell)
-	end
 end
 
 ---------------------------------------------------------------------------------------------------
@@ -977,7 +1018,11 @@ function FSLootTracker:OnSave(eLevel)
 		return 
   	end
   
-	local tSavedData = {}
+	local tSavedData = {
+		tConfig = self.tConfig,
+		tItems = self.tItems,
+		tMoneys = self.tMoneys
+	}
 	return tSavedData
 end
 
@@ -985,7 +1030,42 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.General then
 		return
 	end
+	
+	-- TODO: Why is this breaking shit?!?!?!
+	FSLootTrackerInst.tItems = {}
+	if tSavedData.itemList ~= nil then
+		Print("Item List Loaded")
+		FSLootTrackerInst.tItems = shallowcopy(tSavedData.tItems)
+		-- Saving the Carbine doesn't store the userdata item object
+		-- when it saves data. We need to reload the items them based 
+		-- on the stored item ID.
+		for idx, v in ipairs(FSLootTrackerInst.tItems) do
+			FSLootTrackerInst.tItems[idx].item = Item.GetDataFromId(v.ItemID)
+		end
+	end
+	
+	FSLootTrackerInst.tMoneys = {}
+	if tSavedData.moneyList ~= nil then
+		Print("Money List Loaded")
+		FSLootTrackerInst.tMoneys = shallowcopy(tSavedData.tMoneys)
+	end
+
+	self.tConfig = {}
+	if tSavedData.config ~= nil then
+		self.tConfig = shallowcopy(tSavedData.tConfig)
+	else
+		self.tConfig = shallowcopy(tDefaultOptions)
+	end
 end
+
+function FSLootTracker:InitConfigUI()
+	self.editConfigCosts:SetText(self.tConfig.defaultCost)
+	-- initialize filter states
+	for k,v in pairs(self.tConfig.qualityFilters) do
+		self.editConfigTypes:FindChild(karItemQuality[k].Name):SetCheck(v)
+	end
+end
+
 
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Instance
@@ -1005,4 +1085,3 @@ function FSLootTracker:OnSessionItemClick( wndHandler, wndControl, eMouseButton,
 		-- Open Context Dialog
 	end
 end
-
