@@ -152,6 +152,7 @@ function FSLootTracker:new(o)
 
 	-- initialize variables here
 	--o.fLastTimeAdded = GameLib.GetGameTime()	-- last time the stack queue was updates
+	o.bConfigInit = false		-- Has the options been initialized?
 	o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
 	o.fFirstLoot = nil			-- first time Loot occurred this session
 	o.fLastLoot = nil			-- last time Loot occurred this session
@@ -273,19 +274,21 @@ end
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
 	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
-	local tNewEntry =
-	{
-		recordType = karDataTypes.item,
-		itemID = itemLooted:GetItemId(),
-		item = itemLooted,
-		nCount = 1,
-		looter = strWinner,
-		cost = self.tConfig.defaultCost,
-		timeAdded = GameLib.GetGameTime(),
-		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
-	}
-	table.insert(self.tQueuedEntryData, tNewEntry)
-	self.fLastTimeAdded = GameLib.GetGameTime()	
+	if strWinner ~= GameLib.GetPlayerUnit():GetName() then
+		local tNewEntry =
+		{
+			recordType = karDataTypes.item,
+			itemID = itemLooted:GetItemId(),
+			item = itemLooted,
+			nCount = 1,
+			looter = strWinner,
+			cost = self.tConfig.defaultCost,
+			timeAdded = GameLib.GetGameTime(),
+			timeReported = GameLib.GetLocalTime()['strFormattedTime']		
+		}
+		table.insert(self.tQueuedEntryData, tNewEntry)
+		self.fLastTimeAdded = GameLib.GetGameTime()	
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -442,7 +445,6 @@ function FSLootTracker:OnDocLoaded()
 		self.wndSessions:Show(false)
 		self.wndLootOpts:Show(false)
 		self:RefreshStats()
-		self:InitConfigUI()
 
 		self.wndItemList:Show(true)
 		self.wndMoneyWindow:Show(true)
@@ -544,7 +546,7 @@ function FSLootTracker:OnOptionsToggle( wndHandler, wndControl, eMouseButton )
 	local state = self.wndMain:FindChild("ConfigButton"):IsChecked()
 	self.wndLootOpts:FindChild("OptionsContainer"):Show(state)
 	if state then 
-		self.editConfigCosts:SetText(self.tConfig.defaultCost)
+		self.RefreshUIOptions()
 	else
 		self.tConfig.defaultCost = self.editConfigCosts:GetText()
 	end
@@ -1063,18 +1065,18 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 	--	self.tMoneys = {}	
 	--end
 
-	if tSavedData.config ~= nil then
+	if tSavedData.tConfig ~= nil then
 		self.tConfig = shallowcopy(tSavedData.tConfig)
 	else
 		self.tConfig = shallowcopy(tDefaultOptions)
 	end
 end
 
-function FSLootTracker:InitConfigUI()
-	self.editConfigCosts:SetText(self.tConfig.defaultCost)
+function FSLootTracker:RefreshUIOptions()
+	FSLootTrackerInst.editConfigCosts:SetText(FSLootTrackerInst.tConfig.defaultCost)
 	-- initialize filter states
-	for k,v in pairs(self.tConfig.qualityFilters) do
-		self.editConfigTypes:FindChild(karItemQuality[k].Name):SetCheck(v)
+	for k,v in pairs(FSLootTrackerInst.tConfig.qualityFilters) do
+		FSLootTrackerInst.editConfigTypes:FindChild(karItemQuality[k].Name):SetCheck(v)
 	end
 end
 
