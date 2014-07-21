@@ -113,6 +113,7 @@ local karItemQuality =
 }
 
 local tDefaultOptions = {
+	updateThreshold = 15,
 	defaultCost = 0,
 	timeFormat = "12h", 
 	dateFormat = "MM/DD/YYYY",
@@ -165,6 +166,7 @@ function FSLootTracker:new(o)
 	o.wndEditWindow = nil
 	o.curItemCount = 0			-- current count of items in the item track
 	o.curMoneyCount = 0			-- current count of money items logged
+	o.updateCount = 0
 	o.stats = {
 		totalMoney = 0,
 		perHourMoney = 0,
@@ -215,7 +217,7 @@ function FSLootTracker:OnLootedItem(itemInstance, count)
 		nCount = count,
 		looter = GameLib.GetPlayerUnit():GetName(),
 		cost = self.tConfig.defaultCost,		
-		fTimeAdded = GameLib.GetGameTime(),
+		timeAdded = GameLib.GetGameTime(),
 		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
@@ -235,7 +237,7 @@ function FSLootTracker:OnLootedMoney(monLooted)
 		item = monLooted,
 		nCount = nil,
 		looter = nil,
-		fTimeAdded = GameLib.GetGameTime(),
+		timeAdded = GameLib.GetGameTime(),
 		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
@@ -258,7 +260,7 @@ function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
 			nCount = 1,
 			looter = strLooter,
 			cost = self.tConfig.defaultCost,
-			fTimeAdded = GameLib.GetGameTime(),
+			timeAdded = GameLib.GetGameTime(),
 			timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 		}
 		table.insert(self.tQueuedEntryData, tNewEntry)
@@ -274,12 +276,12 @@ function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
 	local tNewEntry =
 	{
 		recordType = karDataTypes.item,
-		itemID = itemInstance:GetItemId(),
+		itemID = itemLooted:GetItemId(),
 		item = itemLooted,
 		nCount = 1,
 		looter = strWinner,
 		cost = self.tConfig.defaultCost,
-		fTimeAdded = GameLib.GetGameTime(),
+		timeAdded = GameLib.GetGameTime(),
 		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
@@ -294,9 +296,7 @@ function FSLootTracker:OnLootStackUpdate(strVar, nValue)
 
 	-- add a new item if its time
 	if #self.tQueuedEntryData > 0 then
-		self:Debug("Items on Stack: " .. #self.tQueuedEntryData)
 		if fCurrTime - self.fLastTimeAdded >= kfTimeBetweenItems then
-			self:Debug("Queing 1 Item")
 			self:AddQueuedItem()
 		end
 	end
@@ -340,22 +340,31 @@ function FSLootTracker:AddQueuedItem()
 		end
 		-- Track Junk value
 		if iQuality == Item.CodeEnumItemQuality.Inferior then
-			self.stats.junkValue = self.stats.junkValue + item:GetSellPrice():GetAmount()
+			local itemValue = item:GetSellPrice():GetAmount() or 0 
+			self.stats.junkValue = self.stats.junkValue + itemValue
 			self:RefreshStats()
 		end
 	elseif tQueuedData.recordType == karDataTypes.money then
 		self:Debug("Money was added")
-		table.insert(self.tMoneys, tQueuedData)
-		-- Add to total earn if actual money
 		local money = tQueuedData.item
+		tQueuedData["itemType"] = money:GetMoneyType()
+		tQueuedData["itemAmount"] = money:GetAmount()
+		-- Add to total earn if actual money
 		local eCurrencyType = money:GetMoneyType()
+		table.insert(self.tMoneys, tQueuedData)
 		if eCurrencyType == Money.CodeEnumCurrencyType.Credits then
 			self:UpdateStats(money:GetAmount())
 		end		
 	else
 		self:Debug("Unknown type")	
 	end
-	self:RebuildLists()		
+	self.updateCount = self.updateCount + 1
+	-- Only Update the tracked loot once the queue is empty 
+	-- or when we've reach the update threshold
+	-- This code is here for performance reasons
+	if #self.tQueuedEntryData == 0 or self.updateCount > self.tConfig.updateThreshold then
+		self:RebuildLists()		
+	end
 	
 	self.fLastTimeAdded = fCurrTime
 end
@@ -491,25 +500,18 @@ function FSLootTracker:OnClear( wndHandler, wndControl, eMouseButton )
 end
 
 -- when a list item is selected
-function FSLootTracker:OnListItemSelected(wndHandler, wndControl)
+function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
 	-- make sure the wndControl is valid
 	if wndHandler ~= wndControl then
 		return
 	end
-	
-	-- change the old item's text color back to normal color
-	local wndItemText
-	if self.wndSelectedListItem ~= nil then
-		--wndItemText = self.wndSelectedListItem:FindChild("ItemText")
-		--wndItemText:SetTextColor(kcrNormalText)
+
+	if eMouseButton == 0 and bDoubleClick then -- Double Left Click
+		FSLootTrackerInst:CreateEditWindow( wndHandler )
 	end
-	
-	-- wndControl is the item selected - change its color to selected
-	self.wndSelectedListItem = wndControl
-	--wndItemText = self.wndSelectedListItem:FindChild("ItemText")
-	--wndItemText:SetTextColor(kcrSelectedText)
-	
-	self:Debug( "Item " ..  self.wndSelectedListItem:GetData() .. " is selected.")
+	if eMouseButton == 1 then -- Right Clicked
+		-- Open Context Dialog
+	end	
 end
 
 -- when the window is closed
@@ -607,13 +609,14 @@ end
 function FSLootTracker:RebuildLists()
 	self:EmptyLists()
 	for idx,item in ipairs(self.tItems) do
-		self:AddItem(idx, item.item, item.nCount, item.looter, item.fTimeAdded, item.timeReported)
+		self:AddItem(idx, item.item, item.nCount, item.looter, item.timeAdded, item.timeReported)
 		self.curItemCount = self.curItemCount + 1
 	end
 	for idx,money in ipairs(self.tMoneys) do
-		self:AddMoney(idx, money.item, money.fTimeAdded, money.timeReported)
+		self:AddMoney(idx, money.item, money.timeAdded, money.timeReported)
 		self.curMoneyCount = self.curMoneyCount + 1
 	end 
+	self.updateCount = 0
 	self:RebuildExportList()
 	self:RefreshListDisplays()
 	self:RefreshStats()
@@ -644,7 +647,7 @@ function FSLootTracker:RebuildExportList()
 			count = itemInstance.nCount,
 			looter = itemInstance.looter,
 			cost = itemInstance.cost,
-			gameTimeAdded = itemInstance.fTimeAdded,
+			gameTimeAdded = itemInstance.timeAdded,
 			timeReported = itemInstance.timeReported
 		}
 		table.insert(self.tItemsExport, tNewEntry)			
@@ -821,39 +824,9 @@ end
 -- ListItem Functions
 ---------------------------------------------------------------------------------------------------
 
-function FSLootTracker:OnGenerateTooltip( wndHandler, wndControl, eToolTipType, x, y )
-	--if wndControl ~= wndHandler then return end
-	wndControl:SetTooltipDoc(nil)
-	local item = FSLootTrackerInst.tItems[wndHandler:GetData()].item
-	local itemEquipped = item:GetEquippedItemForItemType()
-	Tooltip.GetItemTooltipForm(self, wndControl, item, {bPrimary = true, bSelling = false, itemCompare = itemEquipped})
-	-- Tooltip.GetItemTooltipForm(self, wndControl, itemEquipped, {bPrimary = false, bSelling = false, itemCompare = item})
-end
-
-function FSLootTracker:OnToggleItemFlyout( wndHandler, wndControl, eMouseButton )
-	-- Close the last context window if you've opened a different one.
-	local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
-	
-	if wndLastItemControl and wndLastItemControl ~= nil then
-		if wndControl ~= wndLastItemControl  then
-			wndLastItemControl:SetCheck(false)
-			wndLastItemControl:FindChild("ContextFlyout"):Show(false)
-		end
-	end
-	wndControl:FindChild("ContextFlyout"):Show(wndControl:IsChecked())
-    FSLootTrackerInst.wndLastItemControl = wndControl
-end
-
-function FSLootTracker:OnEditBtnClicked( wndHandler, wndControl, eMouseButton )
-	local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
-	
-	if wndLastItemControl and wndLastItemControl ~= nil then
-		wndLastItemControl:SetCheck(false)
-		wndLastItemControl:FindChild("ContextFlyout"):Show(false)
-	end
-	
-	-- Get Parent List item and associated item data. 
-	local idx = wndHandler:GetParent():GetParent():GetParent():GetParent():GetData()
+function FSLootTracker:CreateEditWindow( wndHandler )
+-- Get Parent List item and associated item data. 
+	local idx = wndHandler:GetData()
 	local data = FSLootTrackerInst.tItems[idx]
 	local item = data.item
 	-- Load the item edit panel
@@ -927,6 +900,41 @@ function FSLootTracker:OnEditBtnClicked( wndHandler, wndControl, eMouseButton )
 	end
 
 	FSLootTrackerInst.wndEditWindow:SetData(idx)
+end
+
+function FSLootTracker:OnGenerateTooltip( wndHandler, wndControl, eToolTipType, x, y )
+	--if wndControl ~= wndHandler then return end
+	wndControl:SetTooltipDoc(nil)
+	local item = FSLootTrackerInst.tItems[wndHandler:GetData()].item
+	local itemEquipped = item:GetEquippedItemForItemType()
+	Tooltip.GetItemTooltipForm(self, wndControl, item, {bPrimary = true, bSelling = false, itemCompare = itemEquipped})
+	-- Tooltip.GetItemTooltipForm(self, wndControl, itemEquipped, {bPrimary = false, bSelling = false, itemCompare = item})
+end
+
+function FSLootTracker:OnToggleItemFlyout( wndHandler, wndControl, eMouseButton )
+	-- Close the last context window if you've opened a different one.
+	local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
+	
+	if wndLastItemControl and wndLastItemControl ~= nil then
+		if wndControl ~= wndLastItemControl  then
+			wndLastItemControl:SetCheck(false)
+			wndLastItemControl:FindChild("ContextFlyout"):Show(false)
+		end
+	end
+	wndControl:FindChild("ContextFlyout"):Show(wndControl:IsChecked())
+    FSLootTrackerInst.wndLastItemControl = wndControl
+end
+
+function FSLootTracker:OnEditBtnClicked( wndHandler, wndControl, eMouseButton )
+	local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
+	
+	if wndLastItemControl and wndLastItemControl ~= nil then
+		wndLastItemControl:SetCheck(false)
+		wndLastItemControl:FindChild("ContextFlyout"):Show(false)
+	end
+	
+	-- Get Parent List item and associated item data. 
+	FSLootTrackerInst:CreateEditWindow( wndHandler:GetParent():GetParent():GetParent():GetParent() )
 end
 
 function FSLootTracker:OnDeleteBtnClicked( wndHandler, wndControl, eMouseButton )
@@ -1031,26 +1039,30 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 		return
 	end
 	
-	-- TODO: Why is this breaking shit?!?!?!
-	FSLootTrackerInst.tItems = {}
-	if tSavedData.itemList ~= nil then
-		Print("Item List Loaded")
-		FSLootTrackerInst.tItems = shallowcopy(tSavedData.tItems)
-		-- Saving the Carbine doesn't store the userdata item object
-		-- when it saves data. We need to reload the items them based 
-		-- on the stored item ID.
-		for idx, v in ipairs(FSLootTrackerInst.tItems) do
-			FSLootTrackerInst.tItems[idx].item = Item.GetDataFromId(v.ItemID)
-		end
-	end
+	--if tSavedData.tItems ~= nil then
+	--	Print("Item List Loaded")
+	--	self.tItems = shallowcopy(tSavedData.tItems)
+	--	-- Saving the Carbine doesn't store the userdata item object
+	--	-- when it saves data. We need to reload the items them based 
+	--	-- on the stored item ID.
+	--	for idx, v in ipairs(self.tItems) do
+	--		self.tItems[idx].item = Item.GetDataFromId(v.ItemID)
+	--	end
+	--else	
+	--	self.tItems = {}
+	--end
 	
-	FSLootTrackerInst.tMoneys = {}
-	if tSavedData.moneyList ~= nil then
-		Print("Money List Loaded")
-		FSLootTrackerInst.tMoneys = shallowcopy(tSavedData.tMoneys)
-	end
+	-- TODO: Money Loot is being stored the same way as items, we need to find a way to 
+	-- create a Money Packet and what information needs to be saved to restore that userdata
+	-- Disabled for now 
+	-----------------------------------------------------------------------------------------
+	--if tSavedData.tMoneys ~= nil then
+	--	Print("Money List Loaded")
+	--	self.tMoneys = shallowcopy(tSavedData.tMoneys)
+	--else
+	--	self.tMoneys = {}	
+	--end
 
-	self.tConfig = {}
 	if tSavedData.config ~= nil then
 		self.tConfig = shallowcopy(tSavedData.tConfig)
 	else
@@ -1085,3 +1097,13 @@ function FSLootTracker:OnSessionItemClick( wndHandler, wndControl, eMouseButton,
 		-- Open Context Dialog
 	end
 end
+
+---------------------------------------------------------------------------------------------------
+-- ItemAddWindow Functions
+---------------------------------------------------------------------------------------------------
+function FSLootTracker:OnAddSaveButton( wndHandler, wndControl, eMouseButton )
+end
+
+function FSLootTracker:OnAddCloseButton( wndHandler, wndControl, eMouseButton )
+end
+
