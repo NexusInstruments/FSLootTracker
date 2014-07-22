@@ -128,6 +128,18 @@ local tDefaultOptions = {
 	}
 }
 
+local strDefaultGuildInfoText = 
+	"=== FSLootTracker ===\n\n" .. 
+	"_.,-*~'`^`'~*-,._\n\n" ..
+	"By Chronosis\n" ..
+	"Copyright (c) 2014\n\n" ..
+	"_.,-*~'`^`'~*-,._\n\n" ..
+	"<FOR SCIENCE>\n" ..
+	"Dominion / PvE\n" .. 
+	"Caretaker-US\n\n" ..
+	"http://forscienceguild.org"
+	
+
 function shallowcopy(orig)
     local orig_type = type(orig)
     local copy
@@ -165,6 +177,7 @@ function FSLootTracker:new(o)
 	o.tMoneyWindows = {}		-- keep track of all the looted money windows
 	o.wndSelectedListItem = nil	-- keep track of which list item is currently selected
 	o.wndEditWindow = nil
+	o.wndInfoWindow = nil
 	o.curItemCount = 0			-- current count of items in the item track
 	o.curMoneyCount = 0			-- current count of money items logged
 	o.updateCount = 0
@@ -556,7 +569,7 @@ function FSLootTracker:OnExportData( wndHandler, wndControl, eMouseButton )
 	if not FSLootTrackerInst.wndExport then
 		FSLootTrackerInst.wndExport = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ExportWindow", nil, FSLootTrackerInst)
 		-- TODO: EXPORT DATA HERE AND INSERT IT INTO THE FORM
-		local exportStr = self:JSONEncode(FSLootTrackerInst.tItemsExport)
+		local exportStr = self:JSONEncodePretty(FSLootTrackerInst.tItemsExport)
 		FSLootTrackerInst.wndExport:FindChild("ExportString"):SetText(exportStr)
 		FSLootTrackerInst.wndExport:Show(true)
 	end
@@ -580,6 +593,33 @@ end
 
 function FSLootTracker:OnSessionsFlyoutUnchecked( wndHandler, wndControl, eMouseButton )
 	FSLootTrackerInst.wndSessions:Show(false)
+end
+
+function FSLootTracker:OnInfoButton( wndHandler, wndControl, eMouseButton )
+	if not FSLootTrackerInst.wndInfoWindow then
+		FSLootTrackerInst.wndInfoWindow = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "AboutWindow", nil, FSLootTrackerInst)		
+		local wndLeft = FSLootTrackerInst.wndInfoWindow:FindChild("Left"):FindChild("Sprite")
+		local wndRight = FSLootTrackerInst.wndInfoWindow:FindChild("Right"):FindChild("Sprite")
+		wndLeft:SetSprite("FSLootSprites:FSPoster")
+		wndRight:SetText(strDefaultGuildInfoText)
+		FSLootTrackerInst.wndInfoWindow:Show(true)
+	end
+end
+
+function FSLootTracker:OnInfoClose( wndHandler, wndControl, eMouseButton )
+	if FSLootTrackerInst.wndInfoWindow then
+		FSLootTrackerInst.wndInfoWindow:Show(false)
+		FSLootTrackerInst.wndInfoWindow:Destroy()
+		FSLootTrackerInst.wndInfoWindow = nil
+	end
+end
+
+function FSLootTracker:OnInfoWindowClosed( wndHandler, wndControl )
+	if FSLootTrackerInst.wndInfoWindow then
+		FSLootTrackerInst.wndInfoWindow:Show(false)
+		FSLootTrackerInst.wndInfoWindow:Destroy()
+		FSLootTrackerInst.wndInfoWindow = nil
+	end
 end
 
 -----------------------------------------------------------------------------------------------
