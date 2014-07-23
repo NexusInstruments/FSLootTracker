@@ -318,6 +318,9 @@ function FSLootTracker:OnLootStackUpdate(strVar, nValue)
 		if fCurrTime - self.fLastTimeAdded >= kfTimeBetweenItems then
 			self:AddQueuedItem()
 		end
+		self.wndProcessingIndicator:Show(true)
+	else
+		self.wndProcessingIndicator:Show(false)
 	end
 end
 
@@ -459,9 +462,12 @@ function FSLootTracker:OnDocLoaded()
 		self.editConfigCosts = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureCosts"):FindChild("EditBox")
 		self.editConfigTypes = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTypes"):FindChild("QualityBtns")		
 		
+		self.wndProcessingIndicator = self.wndMain:FindChild("ProcessingIndicator")
+		
 		self.wndMain:Show(false, true)
 		self.wndSessions:Show(false)
 		self.wndLootOpts:Show(false)
+		self.wndProcessingIndicator:Show(false)
 		self:RefreshStats()
 
 		self.wndItemList:Show(true)
