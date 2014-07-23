@@ -13,7 +13,7 @@ require "GameLib"
 local FSLootTracker = {} 
 local FSLootTrackerInst
 
-local TimeUtils 
+local Chronology = {}
 
 -----------------------------------------------------------------------------------------------
 -- Constants
@@ -408,7 +408,7 @@ function FSLootTracker:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("FSLootTracker.xml")
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
 
-	TimeUtils = Apollo.GetPackage("Time:Utils-1.0").tPackage
+	Chronology = Apollo.GetPackage("Chronology-1.0").tPackage
 
 	-- Library Embeds
 	Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
@@ -818,7 +818,7 @@ function FSLootTracker:AddItem(idx, item, count, looter, time, reportedTime)
 	local wndItemTimestamp = wnd:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
 		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText(TimeUtils:GetFormattedDateTime(reportedTime))
+		wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime))
 		--wndItemTimestamp:SetText(time)
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
@@ -857,7 +857,7 @@ function FSLootTracker:AddMoney(idx, money, time, reportedTime)
 
 	local wndMoneyTimestamp = wnd:FindChild("MoneyTimestamp")
 	if wndMoneyTimestamp then 
-		wndMoneyTimestamp:SetText(TimeUtils:GetFormattedDateTime(reportedTime))
+		wndMoneyTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime))
 		wndMoneyTimestamp:SetTextColor(kcrNormalText)
 	end
 
@@ -931,7 +931,7 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 	local wndItemTimestamp = FSLootTrackerInst.wndEditWindow:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
 		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText("Looted at " .. TimeUtils:GetFormattedDateTime(data.timeReported))
+		wndItemTimestamp:SetText("Looted at " .. Chronology:GetFormattedDateTime(data.timeReported))
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
 	

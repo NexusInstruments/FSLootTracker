@@ -1,13 +1,12 @@
-local TUMAJOR, TUMINOR = "Time:Utils-1.0", 1
-local TUPkg = Apollo.GetPackage(TUMAJOR)
-if TUPkg and (TUPkg.nVersion or 0) >= MINOR then
+local C_MAJOR, C_MINOR = "Chronology-1.0", 1
+local C_Pkg = Apollo.GetPackage(C_MAJOR)
+if C_Pkg and (C_Pkg.nVersion or 0) >= MINOR then
 	return -- no upgrade needed
 end
 
 -- Set a reference to the actual package or create an empty table
-local TimeUtils = TUPkg and TUPkg.tPackage or {}
+local Chronology = C_Pkg and C_Pkg.tPackage or {}
 
-local defaultLanguage = "en"
 local ktMonths = {
 	["en"] = {
 		[1] = {full = "January", abbrv = "Jan."},
@@ -111,7 +110,9 @@ local ktDesignators = {
 	PM = { full = "PM", abbrv = "p"}
 }
 
-function TimeUtils:new(args)
+Chronology.defaultLanguage = "en"
+
+function Chronology:new(args)
    local new = { }
 
    if args then
@@ -120,18 +121,22 @@ function TimeUtils:new(args)
       end
    end
 
-   return setmetatable(new, JsonUtils)
+   return setmetatable(new, Chronology)
 end
 
-function TimeUtils:GetMonthString(month, bAbbrv, lang)
+function Chronology:SetDefaultLanguage(lang)
+	Chronology.defaultLanguage = lang
+end
+
+function Chronology:GetMonthString(month, bAbbrv, lang)
 	local localeMonthValues
 	if lang ~= nil then
 		localeMonthValues = ktMonths[lang]
 		if localeMonthValues == nil then
-			localeMonthValues = ktMonths[defaultLanguage]
+			localeMonthValues = ktMonths[Chronology.defaultLanguage]
 		end
 	else
-		localeMonthValues = ktMonths[defaultLanguage]
+		localeMonthValues = ktMonths[Chronology.defaultLanguage]
 	end
 	
 	if month < 1 or month > 12 then 
@@ -147,15 +152,15 @@ function TimeUtils:GetMonthString(month, bAbbrv, lang)
 	return ""
 end
 
-function TimeUtils:GetDayOfWeekString(day, bAbbrv, lang)
+function Chronology:GetDayOfWeekString(day, bAbbrv, lang)
 	local localeDayValues
 	if lang ~= nil then
 		localeDayValues = ktDaysOfWeek[lang]
 		if localeDayValues == nil then
-			localeDayValues = ktDaysOfWeek[defaultLanguage]
+			localeDayValues = ktDaysOfWeek[Chronology.defaultLanguage]
 		end
 	else
-		localeDayValues = ktDaysOfWeek[defaultLanguage]
+		localeDayValues = ktDaysOfWeek[Chronology.defaultLanguage]
 	end
 	
 	if day < 1 or day > 7 then 
@@ -171,7 +176,7 @@ function TimeUtils:GetDayOfWeekString(day, bAbbrv, lang)
 	return ""	
 end
 
-function TimeUtils:GetHour12(hour)
+function Chronology:GetHour12(hour)
 	local hour12 = hour
 	if hour12 > 12 then 
 		hour12 = hour12 - 12
@@ -182,7 +187,7 @@ function TimeUtils:GetHour12(hour)
 	return hour12
 end
 
-function TimeUtils:GetMeridianDesignator(hour, bAbbrv)
+function Chronology:GetMeridianDesignator(hour, bAbbrv)
 	if hour < 0 or hour > 23 then
 		return ""
 	else
@@ -214,7 +219,7 @@ end
 -- nSecond
 -----------------------
 -- Default String Date Format is International Standard YYYY-MM-DD
-function TimeUtils:GetFormattedDate(tDate, strFormat, locale)
+function Chronology:GetFormattedDate(tDate, strFormat, locale)
 	local strReturn = ""
 	if not strFormat then
 		strFormat = "{YYYY}-{MM}-{DD}"
@@ -223,12 +228,12 @@ function TimeUtils:GetFormattedDate(tDate, strFormat, locale)
 	strReturn = strFormat
 	strReturn = string.gsub( strReturn, "{YYYY}", tostring(tDate.nYear) )
 	strReturn = string.gsub( strReturn, "{YY}", string.format("%02d", string.sub(tostring(tDate.nYear), -3) ) )
-	strReturn = string.gsub( strReturn, "{MMMM}", TimeUtils:GetMonthString(tDate.nMonth, false, locale) )
-	strReturn = string.gsub( strReturn, "{MMM}", TimeUtils:GetMonthString(tDate.nMonth, true, locale) )
+	strReturn = string.gsub( strReturn, "{MMMM}", Chronology:GetMonthString(tDate.nMonth, false, locale) )
+	strReturn = string.gsub( strReturn, "{MMM}", Chronology:GetMonthString(tDate.nMonth, true, locale) )
 	strReturn = string.gsub( strReturn, "{MM}", string.format("%02d", tostring(tDate.nMonth) ) )
 	strReturn = string.gsub( strReturn, "{M}", tostring(tDate.nMonth) )
-	strReturn = string.gsub( strReturn, "{DDDD}", TimeUtils:GetDayOfWeekString(tDate.nDayOfWeek, false, locale) )
-	strReturn = string.gsub( strReturn, "{DDD}", TimeUtils:GetDayOfWeekString(tDate.nDayOfWeek, true, locale) )
+	strReturn = string.gsub( strReturn, "{DDDD}", Chronology:GetDayOfWeekString(tDate.nDayOfWeek, false, locale) )
+	strReturn = string.gsub( strReturn, "{DDD}", Chronology:GetDayOfWeekString(tDate.nDayOfWeek, true, locale) )
 	strReturn = string.gsub( strReturn, "{DD}", string.format("%02d", tostring(tDate.nDay) ) )
 	strReturn = string.gsub( strReturn, "{D}", tostring(tDate.nDay) )	
 	
@@ -236,7 +241,7 @@ function TimeUtils:GetFormattedDate(tDate, strFormat, locale)
 end
 
 -- Default String Date Format is International Standard 24h HH:mm:SS
-function TimeUtils:GetFormattedTime(tDate, strFormat, locale)
+function Chronology:GetFormattedTime(tDate, strFormat, locale)
 	local strReturn = ""
 	if not strFormat then
 		strFormat = "{HH}:{mm}:{SS}"
@@ -245,30 +250,30 @@ function TimeUtils:GetFormattedTime(tDate, strFormat, locale)
 	strReturn = strFormat
 	strReturn = string.gsub( strReturn, "{HH}", string.format("%02d", tDate.nHour ) )
 	strReturn = string.gsub( strReturn, "{H}", tostring(tDate.nHour) )
-	strReturn = string.gsub( strReturn, "{hh}", string.format("%02d", TimeUtils:GetHour12(tDate.nHour) ) )
-	strReturn = string.gsub( strReturn, "{h}", tostring(TimeUtils:GetHour12(tDate.nHour) ) )
+	strReturn = string.gsub( strReturn, "{hh}", string.format("%02d", Chronology:GetHour12(tDate.nHour) ) )
+	strReturn = string.gsub( strReturn, "{h}", tostring(Chronology:GetHour12(tDate.nHour) ) )
 	strReturn = string.gsub( strReturn, "{mm}", string.format("%02d", tDate.nMinute ) )
 	strReturn = string.gsub( strReturn, "{m}", tostring(tDate.nMinute) )
 	strReturn = string.gsub( strReturn, "{SS}", string.format("%02d", tDate.nSecond) )
 	strReturn = string.gsub( strReturn, "{S}", tostring(tDate.nSecond) )
-	strReturn = string.gsub( strReturn, "{TT}", TimeUtils:GetMeridianDesignator(tDate.nHour, false) )
-	strReturn = string.gsub( strReturn, "{T}", TimeUtils:GetMeridianDesignator(tDate.nHour, true) )
+	strReturn = string.gsub( strReturn, "{TT}", Chronology:GetMeridianDesignator(tDate.nHour, false) )
+	strReturn = string.gsub( strReturn, "{T}", Chronology:GetMeridianDesignator(tDate.nHour, true) )
 	
 	return strReturn
 end
 
-function TimeUtils:GetFormattedDateTime(tDate, strFormat, locale)
+function Chronology:GetFormattedDateTime(tDate, strFormat, locale)
 	local strReturn = ""
 	if not strFormat then
 		strFormat = "{YYYY}-{MM}-{DD} {HH}:{mm}:{SS}"
 	end
 	
 	strReturn = strFormat
-	strReturn = TimeUtils:GetFormattedDate(tDate, strReturn, locale)
-	strReturn = TimeUtils:GetFormattedTime(tDate, strReturn, locale)
+	strReturn = Chronology:GetFormattedDate(tDate, strReturn, locale)
+	strReturn = Chronology:GetFormattedTime(tDate, strReturn, locale)
 	
 	return strReturn
 end
 
-Apollo.RegisterPackage(TimeUtils, TUMAJOR, TUMINOR, {})
+Apollo.RegisterPackage(Chronology, C_MAJOR, C_MINOR, {})
 
