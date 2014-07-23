@@ -5,4 +5,5 @@ A loot tracking add-on for Wildstar for both individual use and guild (raiding) 
 This add-on uses the following embedded libraries
 -------------------------------------------------
 * JsonUtils-1.0  ( https://github.com/chronosis/JsonUtils )
+* TimeUtils-1.0  ( https://github.com/chronosis/TimeUtils )
 * ~~GeminiHook-1.0 ( https://github.com/wildstarnasa/GeminiHook )~~

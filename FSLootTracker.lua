@@ -13,6 +13,8 @@ require "GameLib"
 local FSLootTracker = {} 
 local FSLootTrackerInst
 
+local TimeUtils 
+
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
@@ -131,7 +133,8 @@ local tDefaultOptions = {
 local strDefaultGuildInfoText = 
 	"=== FSLootTracker ===\n\n" .. 
 	"_.,-*~'`^`'~*-,._\n\n" ..
-	"By Chronosis\n" ..
+	"Developed By:\n" ..
+	"Chronosis--Caretaker-US\n" ..
 	"Copyright (c) 2014\n\n" ..
 	"_.,-*~'`^`'~*-,._\n\n" ..
 	"<FOR SCIENCE>\n" ..
@@ -232,7 +235,7 @@ function FSLootTracker:OnLootedItem(itemInstance, count)
 		looter = GameLib.GetPlayerUnit():GetName(),
 		cost = self.tConfig.defaultCost,		
 		timeAdded = GameLib.GetGameTime(),
-		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
+		timeReported = GameLib.GetLocalTime()
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -252,7 +255,7 @@ function FSLootTracker:OnLootedMoney(monLooted)
 		nCount = nil,
 		looter = nil,
 		timeAdded = GameLib.GetGameTime(),
-		timeReported = GameLib.GetLocalTime()['strFormattedTime']		
+		timeReported = GameLib.GetLocalTime()
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()		
@@ -275,7 +278,7 @@ function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
 			looter = strLooter,
 			cost = self.tConfig.defaultCost,
 			timeAdded = GameLib.GetGameTime(),
-			timeReported = GameLib.GetLocalTime()['strFormattedTime']		
+			timeReported = GameLib.GetLocalTime()
 		}
 		table.insert(self.tQueuedEntryData, tNewEntry)
 		self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -297,7 +300,7 @@ function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
 			looter = strWinner,
 			cost = self.tConfig.defaultCost,
 			timeAdded = GameLib.GetGameTime(),
-			timeReported = GameLib.GetLocalTime()['strFormattedTime']		
+			timeReported = GameLib.GetLocalTime()
 		}
 		table.insert(self.tQueuedEntryData, tNewEntry)
 		self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -404,6 +407,8 @@ function FSLootTracker:OnLoad()
 	-- load our form file
 	self.xmlDoc = XmlDoc.CreateFromFile("FSLootTracker.xml")
 	self.xmlDoc:RegisterCallback("OnDocLoaded", self)
+
+	TimeUtils = Apollo.GetPackage("Time:Utils-1.0").tPackage
 
 	-- Library Embeds
 	Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
@@ -813,7 +818,7 @@ function FSLootTracker:AddItem(idx, item, count, looter, time, reportedTime)
 	local wndItemTimestamp = wnd:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
 		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText(reportedTime)
+		wndItemTimestamp:SetText(TimeUtils:GetFormattedDateTime(reportedTime))
 		--wndItemTimestamp:SetText(time)
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
@@ -852,7 +857,7 @@ function FSLootTracker:AddMoney(idx, money, time, reportedTime)
 
 	local wndMoneyTimestamp = wnd:FindChild("MoneyTimestamp")
 	if wndMoneyTimestamp then 
-		wndMoneyTimestamp:SetText(reportedTime)
+		wndMoneyTimestamp:SetText(TimeUtils:GetFormattedDateTime(reportedTime))
 		wndMoneyTimestamp:SetTextColor(kcrNormalText)
 	end
 
@@ -926,7 +931,7 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 	local wndItemTimestamp = FSLootTrackerInst.wndEditWindow:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
 		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText("Looted at " .. data.timeReported)
+		wndItemTimestamp:SetText("Looted at " .. TimeUtils:GetFormattedDateTime(data.timeReported))
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
 	

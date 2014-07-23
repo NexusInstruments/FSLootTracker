@@ -1,4 +1,11 @@
-local TimeUtils = {}
+local TUMAJOR, TUMINOR = "Time:Utils-1.0", 1
+local TUPkg = Apollo.GetPackage(TUMAJOR)
+if TUPkg and (TUPkg.nVersion or 0) >= MINOR then
+	return -- no upgrade needed
+end
+
+-- Set a reference to the actual package or create an empty table
+local TimeUtils = TUPkg and TUPkg.tPackage or {}
 
 local defaultLanguage = "en"
 local ktMonths = {
@@ -99,6 +106,11 @@ local ktDaysOfWeek = {
 	}
 }
 
+local ktDesignators = {
+	AM = { full = "AM", abbrv = "a"}, 
+	PM = { full = "PM", abbrv = "p"}
+}
+
 function TimeUtils:new(args)
    local new = { }
 
@@ -111,7 +123,7 @@ function TimeUtils:new(args)
    return setmetatable(new, JsonUtils)
 end
 
-function TimeUtils:GetMonthString(month, lang, bAbbrv)
+function TimeUtils:GetMonthString(month, bAbbrv, lang)
 	local localeMonthValues
 	if lang ~= nil then
 		localeMonthValues = ktMonths[lang]
@@ -135,7 +147,7 @@ function TimeUtils:GetMonthString(month, lang, bAbbrv)
 	return ""
 end
 
-function TimeUtils:GetDayOfWeekString(day, lang, bAbbrv)
+function TimeUtils:GetDayOfWeekString(day, bAbbrv, lang)
 	local localeDayValues
 	if lang ~= nil then
 		localeDayValues = ktDaysOfWeek[lang]
@@ -159,6 +171,104 @@ function TimeUtils:GetDayOfWeekString(day, lang, bAbbrv)
 	return ""	
 end
 
-function TimeUtils:GetFormattedDate(tDate)
-	
+function TimeUtils:GetHour12(hour)
+	local hour12 = hour
+	if hour12 > 12 then 
+		hour12 = hour12 - 12
+	end
+	if hour12 == 0 then
+		hour12 = 12
+	end
+	return hour12
 end
+
+function TimeUtils:GetMeridianDesignator(hour, bAbbrv)
+	if hour < 0 or hour > 23 then
+		return ""
+	else
+		if hour >= 12 then
+			if bAbbrv then 
+				return ktDesignators.PM.abbrv
+			else
+				return ktDesignators.PM.full
+			end
+		else
+			if bAbbrv then 
+				return ktDesignators.AM.abbrv
+			else
+				return ktDesignators.AM.full
+			end
+		end
+	end
+	return ""
+end
+
+-- Sub-values of Time Table
+----------------------
+-- nDay
+-- nDayOfWeek
+-- nMonth
+-- nYear
+-- nHour
+-- nMinute
+-- nSecond
+-----------------------
+-- Default String Date Format is International Standard YYYY-MM-DD
+function TimeUtils:GetFormattedDate(tDate, strFormat, locale)
+	local strReturn = ""
+	if not strFormat then
+		strFormat = "{YYYY}-{MM}-{DD}"
+	end
+	
+	strReturn = strFormat
+	strReturn = string.gsub( strReturn, "{YYYY}", tostring(tDate.nYear) )
+	strReturn = string.gsub( strReturn, "{YY}", string.format("%02d", string.sub(tostring(tDate.nYear), -3) ) )
+	strReturn = string.gsub( strReturn, "{MMMM}", TimeUtils:GetMonthString(tDate.nMonth, false, locale) )
+	strReturn = string.gsub( strReturn, "{MMM}", TimeUtils:GetMonthString(tDate.nMonth, true, locale) )
+	strReturn = string.gsub( strReturn, "{MM}", string.format("%02d", tostring(tDate.nMonth) ) )
+	strReturn = string.gsub( strReturn, "{M}", tostring(tDate.nMonth) )
+	strReturn = string.gsub( strReturn, "{DDDD}", TimeUtils:GetDayOfWeekString(tDate.nDayOfWeek, false, locale) )
+	strReturn = string.gsub( strReturn, "{DDD}", TimeUtils:GetDayOfWeekString(tDate.nDayOfWeek, true, locale) )
+	strReturn = string.gsub( strReturn, "{DD}", string.format("%02d", tostring(tDate.nDay) ) )
+	strReturn = string.gsub( strReturn, "{D}", tostring(tDate.nDay) )	
+	
+	return strReturn
+end
+
+-- Default String Date Format is International Standard 24h HH:mm:SS
+function TimeUtils:GetFormattedTime(tDate, strFormat, locale)
+	local strReturn = ""
+	if not strFormat then
+		strFormat = "{HH}:{mm}:{SS}"
+	end
+	
+	strReturn = strFormat
+	strReturn = string.gsub( strReturn, "{HH}", string.format("%02d", tDate.nHour ) )
+	strReturn = string.gsub( strReturn, "{H}", tostring(tDate.nHour) )
+	strReturn = string.gsub( strReturn, "{hh}", string.format("%02d", TimeUtils:GetHour12(tDate.nHour) ) )
+	strReturn = string.gsub( strReturn, "{h}", tostring(TimeUtils:GetHour12(tDate.nHour) ) )
+	strReturn = string.gsub( strReturn, "{mm}", string.format("%02d", tDate.nMinute ) )
+	strReturn = string.gsub( strReturn, "{m}", tostring(tDate.nMinute) )
+	strReturn = string.gsub( strReturn, "{SS}", string.format("%02d", tDate.nSecond) )
+	strReturn = string.gsub( strReturn, "{S}", tostring(tDate.nSecond) )
+	strReturn = string.gsub( strReturn, "{TT}", TimeUtils:GetMeridianDesignator(tDate.nHour, false) )
+	strReturn = string.gsub( strReturn, "{T}", TimeUtils:GetMeridianDesignator(tDate.nHour, true) )
+	
+	return strReturn
+end
+
+function TimeUtils:GetFormattedDateTime(tDate, strFormat, locale)
+	local strReturn = ""
+	if not strFormat then
+		strFormat = "{YYYY}-{MM}-{DD} {HH}:{mm}:{SS}"
+	end
+	
+	strReturn = strFormat
+	strReturn = TimeUtils:GetFormattedDate(tDate, strReturn, locale)
+	strReturn = TimeUtils:GetFormattedTime(tDate, strReturn, locale)
+	
+	return strReturn
+end
+
+Apollo.RegisterPackage(TimeUtils, TUMAJOR, TUMINOR, {})
+
