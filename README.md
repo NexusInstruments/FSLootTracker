@@ -17,7 +17,7 @@ Embedding
 
 JSONDecode
 ----------
-''Example''
+**Example**
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
   
@@ -25,7 +25,7 @@ JSONDecode
 
   local tNewTable = self:JSONDecode(jsonStr)
 ```
-Results
+**Results**
 ```
 Value of tNewTable:
 {
@@ -38,7 +38,7 @@ Value of tNewTable:
 
 JSONEncode
 ----------
-''Example''
+**Example**
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
    
@@ -51,14 +51,14 @@ JSONEncode
    
   local exportStr = self:JSONEncode(tNewTable)
 ```
-Results
+**Results**
 ```
 [{"a":1,"b":"string","c":{"a":1,"b":"string"},"d":null}]
 ```
 
 JSONEncodePretty
 ----------------
-''Example''
+**Example**
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
    
@@ -71,7 +71,7 @@ JSONEncodePretty
    
   local exportStr = self:JSONEncodePretty(tNewTable)
 ```
-Results
+**Results**
 ```
 [
   {
