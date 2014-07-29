@@ -114,11 +114,15 @@ local karItemQuality =
 	},
 }
 
+local ktTimeStampFormats = {
+	["12h"] = "{YYYY}-{MM}-{DD} {hh}:{mm}:{SS} {TT}",
+	["24h"] = "{YYYY}-{MM}-{DD} {HH}:{mm}:{SS}",
+}
+
 local tDefaultOptions = {
 	updateThreshold = 15,
 	defaultCost = 0,
 	timeFormat = "12h", 
-	dateFormat = "MM/DD/YYYY",
 	qualityFilters = {
 		[Item.CodeEnumItemQuality.Inferior] = false,
 		[Item.CodeEnumItemQuality.Average] = false,
@@ -251,9 +255,7 @@ function FSLootTracker:OnLootedMoney(monLooted)
 	local tNewEntry =
 	{
 		recordType = karDataTypes.money,
-		item = monLooted,
-		nCount = nil,
-		looter = nil,
+		money = monLooted,
 		timeAdded = GameLib.GetGameTime(),
 		timeReported = GameLib.GetLocalTime()
 	}
@@ -318,9 +320,13 @@ function FSLootTracker:OnLootStackUpdate(strVar, nValue)
 		if fCurrTime - self.fLastTimeAdded >= kfTimeBetweenItems then
 			self:AddQueuedItem()
 		end
-		self.wndProcessingIndicator:Show(true)
+		if self.wndProcessingIndicator then
+			self.wndProcessingIndicator:Show(true)
+		end
 	else
-		self.wndProcessingIndicator:Show(false)
+		if self.wndProcessingIndicator then
+			self.wndProcessingIndicator:Show(false)
+		end
 	end
 end
 
@@ -368,9 +374,10 @@ function FSLootTracker:AddQueuedItem()
 		end
 	elseif tQueuedData.recordType == karDataTypes.money then
 		self:Debug("Money was added")
-		local money = tQueuedData.item
-		tQueuedData["itemType"] = money:GetMoneyType()
-		tQueuedData["itemAmount"] = money:GetAmount()
+		local money = tQueuedData.money
+		tQueuedData.moneyType = money:GetMoneyType()
+		tQueuedData.moneyAltType = money:GetAltType()
+		tQueuedData.moneyAmount = money:GetAmount()
 		-- Add to total earn if actual money
 		local eCurrencyType = money:GetMoneyType()
 		table.insert(self.tMoneys, tQueuedData)
@@ -398,6 +405,8 @@ end
 function FSLootTracker:OnInterfaceMenuListHasLoaded()
 	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "FSLootTracker", {"Generic_ToggleLoot", "", "FSLootSprites:TransChestSmall"})
 	--self:UpdateInterfaceMenuAlerts()
+	self:RebuildLists()
+	self:RefreshStats()
 end
 
 -----------------------------------------------------------------------------------------------
@@ -461,6 +470,7 @@ function FSLootTracker:OnDocLoaded()
 
 		self.editConfigCosts = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureCosts"):FindChild("EditBox")
 		self.editConfigTypes = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTypes"):FindChild("QualityBtns")		
+		self.editConfigTimeFormat = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTimeFormat")
 		
 		self.wndProcessingIndicator = self.wndMain:FindChild("ProcessingIndicator")
 		
@@ -468,7 +478,6 @@ function FSLootTracker:OnDocLoaded()
 		self.wndSessions:Show(false)
 		self.wndLootOpts:Show(false)
 		self.wndProcessingIndicator:Show(false)
-		self:RefreshStats()
 
 		self.wndItemList:Show(true)
 		self.wndMoneyWindow:Show(true)
@@ -521,8 +530,11 @@ end
 
 -- when the Clear button is clicked
 function FSLootTracker:OnClear( wndHandler, wndControl, eMouseButton )
-	self:Debug( "Clear Pressed. " .. self.wndMain:GetName())
-	FSLootTrackerInst:ClearLists()
+	if not FSLootTrackerInst.wndDeleteConfirm then
+		--Show Confirm Window
+		FSLootTrackerInst.wndDeleteConfirm = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ConfirmDeleteWindow", nil, FSLootTrackerInst)
+		FSLootTrackerInst.wndDeleteConfirm:Show(true)
+	end
 end
 
 -- when a list item is selected
@@ -536,7 +548,7 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
 		FSLootTrackerInst:CreateEditWindow( wndHandler )
 	end
 	if eMouseButton == 1 then -- Right Clicked
-		-- Open Context Dialog
+		-- TODO: Open Context Dialog
 	end	
 end
 
@@ -633,6 +645,17 @@ function FSLootTracker:OnInfoWindowClosed( wndHandler, wndControl )
 	end
 end
 
+function FSLootTracker:OnTimeFormatCheck( wndHandler, wndControl, eMouseButton )
+	FSLootTrackerInst.tConfig.timeFormat = wndControl:GetText()
+end
+
+function FSLootTracker:OnAddItemButton( wndHandler, wndControl, eMouseButton )
+	if not FSLootTrackerInst.wndAddItem then
+		FSLootTrackerInst.wndAddItem = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ItemAddWindow", nil, FSLootTrackerInst)		
+		FSLootTrackerInst.wndAddItem:Show(true)
+	end
+end
+
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker ClearLists
 -----------------------------------------------------------------------------------------------
@@ -666,7 +689,7 @@ function FSLootTracker:RebuildLists()
 		self.curItemCount = self.curItemCount + 1
 	end
 	for idx,money in ipairs(self.tMoneys) do
-		self:AddMoney(idx, money.item, money.timeAdded, money.timeReported)
+		self:AddMoney(idx, money.money, money.timeAdded, money.timeReported)
 		self.curMoneyCount = self.curMoneyCount + 1
 	end 
 	self.updateCount = 0
@@ -692,6 +715,7 @@ function FSLootTracker:RebuildExportList()
 	for idx, itemInstance in ipairs(self.tItems) do
 		local tNewEntry =
 		{
+			itemID = itemInstance.item:GetItemId(),
 			itemName = itemInstance.item:GetName(),
 			itemQuality = itemInstance.item:GetItemQuality() or 1,
 			itemILvl = itemInstance.item:GetItemPower(),
@@ -823,8 +847,8 @@ function FSLootTracker:AddItem(idx, item, count, looter, time, reportedTime)
 	-- give it a piece of data to refer to 
 	local wndItemTimestamp = wnd:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
-		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime))
+		local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
+		wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime, strFormat))
 		--wndItemTimestamp:SetText(time)
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
@@ -863,7 +887,8 @@ function FSLootTracker:AddMoney(idx, money, time, reportedTime)
 
 	local wndMoneyTimestamp = wnd:FindChild("MoneyTimestamp")
 	if wndMoneyTimestamp then 
-		wndMoneyTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime))
+		local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
+		wndMoneyTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime, strFormat))
 		wndMoneyTimestamp:SetTextColor(kcrNormalText)
 	end
 
@@ -936,8 +961,8 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 	-- give it a piece of data to refer to 
 	local wndItemTimestamp = FSLootTrackerInst.wndEditWindow:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
-		-- Okay need to fix this lol. 
-		wndItemTimestamp:SetText("Looted at " .. Chronology:GetFormattedDateTime(data.timeReported))
+		local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
+		wndItemTimestamp:SetText("Looted at " .. Chronology:GetFormattedDateTime(data.timeReported, strFormat))
 		wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
 	
@@ -1055,17 +1080,32 @@ end
 -- ConfirmDeleteWindow Functions
 ---------------------------------------------------------------------------------------------------
 function FSLootTracker:OnConfirmDelete( wndHandler, wndControl, eMouseButton )
+	FSLootTrackerInst:ClearLists()
+	if FSLootTrackerInst.wndDeleteConfirm then
+		FSLootTrackerInst.wndDeleteConfirm:Show(false)
+		FSLootTrackerInst.wndDeleteConfirm:Destroy()
+	end
+	FSLootTrackerInst.wndDeleteConfirm = nil
 end
 
 function FSLootTracker:OnCancelDelete( wndHandler, wndControl, eMouseButton )
-
+	if FSLootTrackerInst.wndDeleteConfirm then
+		FSLootTrackerInst.wndDeleteConfirm:Show(false)
+		FSLootTrackerInst.wndDeleteConfirm:Destroy()
+	end
+	FSLootTrackerInst.wndDeleteConfirm = nil
 end
-
 
 ---------------------------------------------------------------------------------------------------
 -- ExportWindow Functions
 ---------------------------------------------------------------------------------------------------
 function FSLootTracker:OnCloseExport( wndHandler, wndControl, eMouseButton )
+	wndHandler:GetParent():Show(false)
+	wndHandler:GetParent():Destroy()
+	FSLootTrackerInst.wndExport = nil
+end
+
+function FSLootTracker:OnExportClosed( wndHandler, wndControl )
 	wndHandler:GetParent():Show(false)
 	wndHandler:GetParent():Destroy()
 	FSLootTrackerInst.wndExport = nil
@@ -1092,31 +1132,39 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 		return
 	end
 	
-	--if tSavedData.tItems ~= nil then
-	--	Print("Item List Loaded")
-	--	self.tItems = shallowcopy(tSavedData.tItems)
-	--	-- Saving the Carbine doesn't store the userdata item object
-	--	-- when it saves data. We need to reload the items them based 
-	--	-- on the stored item ID.
-	--	for idx, v in ipairs(self.tItems) do
-	--		self.tItems[idx].item = Item.GetDataFromId(v.ItemID)
-	--	end
-	--else	
-	--	self.tItems = {}
-	--end
+	if tSavedData.tItems then
+		self.tItems = shallowcopy(tSavedData.tItems)
+		-- Carbine doesn't store the userdata item object
+		-- when it saves data. We need to reload the items, 
+		-- then based on the stored item ID.
+		for idx, v in ipairs(self.tItems) do
+			self.tItems[idx].item = Item.GetDataFromId(tonumber(v.itemID))
+		end
+	else	
+		self.tItems = {}
+	end
 	
 	-- TODO: Money Loot is being stored the same way as items, we need to find a way to 
 	-- create a Money Packet and what information needs to be saved to restore that userdata
 	-- Disabled for now 
 	-----------------------------------------------------------------------------------------
-	--if tSavedData.tMoneys ~= nil then
-	--	Print("Money List Loaded")
-	--	self.tMoneys = shallowcopy(tSavedData.tMoneys)
-	--else
-	--	self.tMoneys = {}	
-	--end
+	if tSavedData.tMoney then
+		self.tMoneys = shallowcopy(tSavedData.tMoneys)
+		-- Carbine doesn't store the userdata money object
+		-- when it saves data. We need to recreate the money 
+		-- objects
+		for idx, v in ipairs(self.tMoneys) do
+			local m = Money:new()
+			m:SetAmount(tonumber(v.moneyAmount))
+			m:SetMoneyType(tonumber(v.moneyType))
+			m:SetAltType(tonumber(v.moneyAltType))
+			self.tMoneys[idx].money = m
+		end
+	else
+		self.tMoneys = {}	
+	end
 
-	if tSavedData.tConfig ~= nil then
+	if tSavedData.tConfig then
 		self.tConfig = shallowcopy(tSavedData.tConfig)
 	else
 		self.tConfig = shallowcopy(tDefaultOptions)
@@ -1129,16 +1177,11 @@ function FSLootTracker:RefreshUIOptions()
 	for k,v in pairs(FSLootTrackerInst.tConfig.qualityFilters) do
 		FSLootTrackerInst.editConfigTypes:FindChild(karItemQuality[k].Name):SetCheck(v)
 	end
+	local button = FSLootTrackerInst.editConfigTimeFormat:FindChild(FSLootTrackerInst.tConfig.timeFormat)
+	button:SetCheck(true)
 end
 
 
------------------------------------------------------------------------------------------------
--- FSLootTracker Instance
------------------------------------------------------------------------------------------------
-FSLootTrackerInst = FSLootTracker:new()
-FSLootTrackerInst:Init()
-
----------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------
 -- ListSession Functions
 ---------------------------------------------------------------------------------------------------
@@ -1155,8 +1198,47 @@ end
 -- ItemAddWindow Functions
 ---------------------------------------------------------------------------------------------------
 function FSLootTracker:OnAddSaveButton( wndHandler, wndControl, eMouseButton )
+	if FSLootTrackerInst.wndAddItem then
+		local itemID = FSLootTrackerInst.wndAddItem:FindChild("ItemID"):GetText()
+		local itemLooter = FSLootTrackerInst.wndAddItem:FindChild("ItemLooter"):GetText()
+		local itemCount = FSLootTrackerInst.wndAddItem:FindChild("ItemCount"):GetText()
+		local itemCost = FSLootTrackerInst.wndAddItem:FindChild("ItemCost"):GetText()
+		local item
+		
+		-- Must validate the input before we get here -- so people don't enter junk data
+		if itemID ~= "" then
+			item = Item.GetDataFromId(tonumber(itemID))
+			if item then
+				Print(item:GetName())
+			else 
+				Print("Item does not exist")
+			end
+		end
+			
+		FSLootTrackerInst.wndAddItem:Show(false)
+		FSLootTrackerInst.wndAddItem:Destroy()
+		FSLootTrackerInst.wndAddItem = nil
+	end
 end
 
 function FSLootTracker:OnAddCloseButton( wndHandler, wndControl, eMouseButton )
+	if FSLootTrackerInst.wndAddItem then
+		FSLootTrackerInst.wndAddItem:Show(false)
+		FSLootTrackerInst.wndAddItem:Destroy()
+		FSLootTrackerInst.wndAddItem = nil
+	end
 end
 
+function FSLootTracker:OnItemAddClosed( wndHandler, wndControl )
+	if FSLootTrackerInst.wndAddItem then
+		FSLootTrackerInst.wndAddItem:Show(false)
+		FSLootTrackerInst.wndAddItem:Destroy()
+		FSLootTrackerInst.wndAddItem = nil
+	end
+end
+
+-----------------------------------------------------------------------------------------------
+-- FSLootTracker Instance
+-----------------------------------------------------------------------------------------------
+FSLootTrackerInst = FSLootTracker:new()
+FSLootTrackerInst:Init()
