@@ -1,7 +1,15 @@
------------------------------------------------------------------------------------------------
--- Client Lua Script for FSLootTracker
--- Copyright (c) Chronosis. All rights reserved
------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------
+--	FSLootTracker ver. @project-version@
+--	by Chronosis--Caretaker-US
+--	Build @project-hash@
+--	Copyright (c) Chronosis. All rights reserved
+--
+--	https://github.com/chronosis/FSLootTracker
+------------------------------------------------------------------------------------------------
+-- TODO: Load Money/Items on demand -- don't save all the data in memory (slow/bad)
+-- TODO: Move most data into a cache, so that repeated data isn't eatting up memory (bad)
+-- TODO: Change data storage into indicies into the respective caches (freeing up memory/storing only what's necessary)
+-- TODO: Options Screen -- Add Persistent Session Option, Source Filter, Black List
 
 require "Apollo" 
 require "Window"
@@ -18,16 +26,26 @@ local Chronology = {}
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
--- e.g. local kiExampleVariableMax = 999
 local kcrSelectedText = ApolloColor.new("UI_BtnTextHoloPressedFlyby")
 local kcrNormalText = ApolloColor.new("UI_BtnTextHoloNormal")
-
 local kfTimeBetweenItems = 2 -- Previously .3			-- delay between items; also determines clearing time (seconds)
 
 local karDataTypes = {
 	clear = 0,
 	item = 1,
 	money = 2
+}
+
+local karLootSources = {
+	["Normal"] = 0,
+	["Rolled"] = 1,
+	["Master"] = 2
+}
+
+local karLootSourcesNames = {
+	[0] = "Normal",
+	[1] = "Rolled",
+	[2] = "Master"
 }
 
 local karItemQualityNames = {
@@ -48,7 +66,7 @@ local karItemQuality =
 		Color			= "ItemQuality_Inferior",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Silver",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Silver",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_Silver",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityGrey",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetGrey",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Silver",
 	},
@@ -58,7 +76,7 @@ local karItemQuality =
 		Color		   	= "ItemQuality_Average",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_White",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_White",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_White",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityWhite",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetWhite",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_White",
  	},
@@ -68,7 +86,7 @@ local karItemQuality =
 		Color		   	= "ItemQuality_Good",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Green",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Green",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_Green",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityGreen",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetGreen",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Green",
   	},
@@ -78,7 +96,7 @@ local karItemQuality =
 		Color		   	= "ItemQuality_Excellent",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Blue",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Blue",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_Blue",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityBlue",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetBlue",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Blue",
 	},
@@ -88,7 +106,7 @@ local karItemQuality =
 		Color		   	= "ItemQuality_Superb",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Purple",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Purple",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_Purple",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityPurple",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetPurple",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Purple",
  	},
@@ -98,7 +116,7 @@ local karItemQuality =
 		Color		   	= "ItemQuality_Legendary",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Orange",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Orange",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_Orange",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityOrange",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetOrange",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Orange",
   	},
@@ -108,7 +126,7 @@ local karItemQuality =
 		Color		   	= "ItemQuality_Artifact",
 		BarSprite	   	= "CRB_Tooltips:sprTooltip_RarityBar_Pink",
 		HeaderSprite	= "CRB_Tooltips:sprTooltip_Header_Pink",
-		SquareSprite	= "CRB_Tooltips:sprTooltip_SquareFrame_Pink",
+		SquareSprite	= "BK3:UI_BK3_ItemQualityMagenta",
 		CompactIcon	 	= "CRB_TooltipSprites:sprTT_HeaderInsetPink",
 		NotifyBorder	= "ItemQualityBrackets:sprItemQualityBracket_Pink",
 	},
@@ -120,6 +138,8 @@ local ktTimeStampFormats = {
 }
 
 local tDefaultOptions = {
+	debug = false,
+	persistSession = true,
 	updateThreshold = 15,
 	defaultCost = 0,
 	timeFormat = "12h", 
@@ -131,6 +151,11 @@ local tDefaultOptions = {
 		[Item.CodeEnumItemQuality.Superb] = false,
 		[Item.CodeEnumItemQuality.Legendary] = false,
 		[Item.CodeEnumItemQuality.Artifact] = false
+	},
+	sourceFilters = {
+		[karLootSources.Normal] = false,
+		[karLootSources.Rolled] = false,
+		[karLootSources.Master] = false,	
 	}
 }
 
@@ -170,42 +195,53 @@ function FSLootTracker:new(o)
 	self.__index = self 
 
 	-- initialize variables here
-	--o.fLastTimeAdded = GameLib.GetGameTime()	-- last time the stack queue was updates
-	o.bConfigInit = false		-- Has the options been initialized?
-	o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
 	o.fFirstLoot = nil			-- first time Loot occurred this session
 	o.fLastLoot = nil			-- last time Loot occurred this session
 	o.fLastTimeAdded = 0		-- last time the stack queue was updates
-	o.tQueuedEntryData = {}		-- keep track of all recently looted items to process
-	o.tItems = {} 				-- keep track of all the looted items
-	o.tItemsEncoded = {} 		-- keep track of all the looted items
-	o.tItemWindows = {}			-- keep track of all the looted item windows
-	o.tMoneys = {}				-- keep track of all the looted money
-	o.tMoneyWindows = {}		-- keep track of all the looted money windows
-	o.wndSelectedListItem = nil	-- keep track of which list item is currently selected
-	o.wndEditWindow = nil
-	o.wndInfoWindow = nil
-	o.curItemCount = 0			-- current count of items in the item track
 	o.curMoneyCount = 0			-- current count of money items logged
-	o.updateCount = 0
-	o.stats = {
+
+	o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
+
+	o.tStats = {
 		totalMoney = 0,
 		perHourMoney = 0,
 		avgMoney = 0,
 		junkValue = 0,
 		largestDrop = 0
 	}
-	o.isOpen = false			-- current window state   
-	o.debug = false
+
+	o.tState = {
+		isOpen = false,			-- current window state   
+		lastSource = "Unknown",	-- last loot source
+		updateCount = 0
+	}
+
+	o.tCache = {
+		tSourceCache = {},
+		tZoneCache = {},
+		tLooterCache = {}
+	}
 	
+	o.tQueuedEntryData = {}		-- keep track of all recently looted items to process
+
+	o.tMoneys = {}				-- keep track of all the looted money
+	o.tItems = {} 				-- keep track of all the looted items
+	o.tItemsEncoded = {} 		-- keep track of all the looted items
+	
+	o.tItemWindows = {}			-- keep track of all the looted item windows
+	o.tMoneyWindows = {}		-- keep track of all the looted money windows
+		
+	o.wndSelectedListItem = nil	-- keep track of which list item is currently selected
+	o.wndEditWindow = nil
+	o.wndInfoWindow = nil
 	o.wndLastItemControl = nil
 
 	return o
 end
 
 function FSLootTracker:Debug( message )
-	if (self.debug) then
-		if (self.debug == true) then
+	if self.tConfig then
+		if self.tConfig.debug then
 			Print(message)
 		end
 	end
@@ -225,42 +261,82 @@ end
 ---------------------------------------------------------------------------------------------------
 
 -----------------------------------------------------------------------------------------------
+-- FSLootTracker OnLootedMoney
+-----------------------------------------------------------------------------------------------
+function FSLootTracker:OnLootedMoney(moneyInstance)
+	local tNewEntry =
+	{
+		recordType = karDataTypes.money,
+		moneyAmount = moneyInstance:GetAmount(),
+		moneyType = moneyInstance:GetMoneyType(),
+		source = self.tState.lastSource,
+		timeAdded = GameLib.GetGameTime(),
+		timeReported = GameLib.GetLocalTime(),
+		zone = GameLib.GetCurrentZoneMap().strName	
+	}
+	table.insert(self.tQueuedEntryData, tNewEntry)
+	self.fLastTimeAdded = GameLib.GetGameTime()		
+end
+
+-----------------------------------------------------------------------------------------------
 -- FSLootTracker OnLootedItem
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:OnLootedItem(itemInstance, count)
+function FSLootTracker:OnLootedItem(itemInstance, itemCount)
 	--queue recently added items
 	self:Debug("Item Looted: " .. itemInstance:GetName())
+	local v = itemInstance:GetSellPrice():GetAmount() or 0
 	local tNewEntry =
 	{
 		recordType = karDataTypes.item,
 		itemID = itemInstance:GetItemId(),
-		item = itemInstance,
-		nCount = count,
+		count = itemCount,
+		cost = self.tConfig.defaultCost,
 		looter = GameLib.GetPlayerUnit():GetName(),
-		cost = self.tConfig.defaultCost,		
+		quality = itemInstance:GetItemQuality() or 1,
+		source = self.tState.lastSource,
+		sourceType = karLootSources["Normal"],
+		name = itemInstance:GetName(),
+		iLvl = itemInstance:GetItemPower(),
+		icon = itemInstance:GetIcon(),	
+		type = itemInstance:GetItemTypeName(),				
 		timeAdded = GameLib.GetGameTime(),
-		timeReported = GameLib.GetLocalTime()
+		timeReported = GameLib.GetLocalTime(),
+		value = v,
+		zone = GameLib.GetCurrentZoneMap().strName
 	}
 	table.insert(self.tQueuedEntryData, tNewEntry)
 	self.fLastTimeAdded = GameLib.GetGameTime()	
 end
 
 -----------------------------------------------------------------------------------------------
--- FSLootTracker OnLootedMoney
+-- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:OnLootedMoney(monLooted)
-	local eCurrencyType = monLooted:GetMoneyType()
-	--Print(self:JSONEncode(GameLib.GetLocalTime()))
-	--self:Debug("Money Looted: " .. eCurrencyType:GetName())
-	local tNewEntry =
-	{
-		recordType = karDataTypes.money,
-		money = monLooted,
-		timeAdded = GameLib.GetGameTime(),
-		timeReported = GameLib.GetLocalTime()
-	}
-	table.insert(self.tQueuedEntryData, tNewEntry)
-	self.fLastTimeAdded = GameLib.GetGameTime()		
+function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
+	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
+	if strWinner ~= GameLib.GetPlayerUnit():GetName() then
+		local v = itemLooted:GetSellPrice():GetAmount() or 0
+		local tNewEntry =
+		{
+			recordType = karDataTypes.item,
+			itemID = itemLooted:GetItemId(),
+			count = 1,
+			cost = self.tConfig.defaultCost,
+			looter = strWinner,
+			quality = itemLooted:GetItemQuality() or 1,
+			source = self.tState.lastSource,
+			sourceType = karLootSources["Rolled"],		
+			name = itemInstance:GetName(),
+			icon = itemInstance:GetIcon(),
+			iLvl = itemInstance:GetItemPower(),
+			type = itemInstance:GetItemTypeName(),	
+			timeAdded = GameLib.GetGameTime(),
+			timeReported = GameLib.GetLocalTime(),
+			value = v,		
+			zone = GameLib.GetCurrentZoneMap().strName
+		}
+		table.insert(self.tQueuedEntryData, tNewEntry)
+		self.fLastTimeAdded = GameLib.GetGameTime()	
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -271,38 +347,25 @@ function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
 	-- Only Track this event if the looter isn't the player running the addon 
 	-- Since this will be caught by the onLootItem event automatically
 	if strLooter ~= GameLib.GetPlayerUnit():GetName() then
+		local v = itemInstance:GetSellPrice():GetAmount() or 0
 		local tNewEntry =
 		{
 			recordType = karDataTypes.item,
 			itemID = itemInstance:GetItemId(),
-			item = itemInstance,
-			nCount = 1,
+			count = 1,
+			cost = self.tConfig.defaultCost,
 			looter = strLooter,
-			cost = self.tConfig.defaultCost,
+			quality = itemInstance:GetItemQuality() or 1,
+			source = self.tState.lastSource,
+			sourceType = karLootSources["Master"],		
+			name = itemInstance:GetName(),
+			icon = itemInstance:GetIcon(),		
+			iLvl = itemInstance:GetItemPower(),
+			type = itemInstance:GetItemTypeName(),						
 			timeAdded = GameLib.GetGameTime(),
-			timeReported = GameLib.GetLocalTime()
-		}
-		table.insert(self.tQueuedEntryData, tNewEntry)
-		self.fLastTimeAdded = GameLib.GetGameTime()	
-	end
-end
-
------------------------------------------------------------------------------------------------
--- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
------------------------------------------------------------------------------------------------
-function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
-	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
-	if strWinner ~= GameLib.GetPlayerUnit():GetName() then
-		local tNewEntry =
-		{
-			recordType = karDataTypes.item,
-			itemID = itemLooted:GetItemId(),
-			item = itemLooted,
-			nCount = 1,
-			looter = strWinner,
-			cost = self.tConfig.defaultCost,
-			timeAdded = GameLib.GetGameTime(),
-			timeReported = GameLib.GetLocalTime()
+			timeReported = GameLib.GetLocalTime(),
+			value = v,			
+			zone = GameLib.GetCurrentZoneMap().strName
 		}
 		table.insert(self.tQueuedEntryData, tNewEntry)
 		self.fLastTimeAdded = GameLib.GetGameTime()	
@@ -345,53 +408,46 @@ function FSLootTracker:AddQueuedItem()
 		return
 	end
 
-	if tQueuedData.nCount == 0 then
-		self:Debug("Item has no count")
-		return
-	end
+	--if tQueuedData.count == 0 then
+	--	self:Debug("Item has no count")
+	--	return
+	--end
 	
 	local now = GameLib.GetGameTime()
 	if self.fFirstLoot == nil then
 		self.fFirstLoot = now
 	end
 	self.fLastLoot = now
+	local fCurrTime = now
 
 	-- push this item on the end of the table
-	local fCurrTime = now
 	if tQueuedData.recordType == karDataTypes.item then
 		self:Debug("Item was added")
-		local item = tQueuedData.item
-		local iQuality = item:GetItemQuality() or 1
+		local iQuality = tQueuedData.quality
 		-- Only add items of quality not being filtered
 		if self.tConfig.qualityFilters[iQuality] ~= true then
 			table.insert(self.tItems, tQueuedData)
 		end
 		-- Track Junk value
-		if iQuality == Item.CodeEnumItemQuality.Inferior then
-			local itemValue = item:GetSellPrice():GetAmount() or 0 
-			self.stats.junkValue = self.stats.junkValue + itemValue
+		if iQuality == Item.CodeEnumItemQuality.Inferior then		
+			self.tStats.junkValue = self.tStats.junkValue + tQueuedData.value
 			self:RefreshStats()
 		end
 	elseif tQueuedData.recordType == karDataTypes.money then
 		self:Debug("Money was added")
-		local money = tQueuedData.money
-		tQueuedData.moneyType = money:GetMoneyType()
-		tQueuedData.moneyAltType = money:GetAltType()
-		tQueuedData.moneyAmount = money:GetAmount()
 		-- Add to total earn if actual money
-		local eCurrencyType = money:GetMoneyType()
 		table.insert(self.tMoneys, tQueuedData)
-		if eCurrencyType == Money.CodeEnumCurrencyType.Credits then
-			self:UpdateStats(money:GetAmount())
+		if tQueuedData.moneyType == Money.CodeEnumCurrencyType.Credits then
+			self:UpdateStats(tQueuedData.moneyAmount)
 		end		
 	else
 		self:Debug("Unknown type")	
 	end
-	self.updateCount = self.updateCount + 1
+	self.tState.updateCount = self.tState.updateCount + 1
 	-- Only Update the tracked loot once the queue is empty 
 	-- or when we've reach the update threshold
 	-- This code is here for performance reasons
-	if #self.tQueuedEntryData == 0 or self.updateCount > self.tConfig.updateThreshold then
+	if #self.tQueuedEntryData == 0 or self.tState.updateCount > self.tConfig.updateThreshold then
 		self:RebuildLists()		
 	end
 	
@@ -432,10 +488,20 @@ function FSLootTracker:OnLoad()
 	Apollo.RegisterEventHandler("LootedMoney", "OnLootedMoney", self)
 	Apollo.RegisterEventHandler("LootAssigned", "OnLootAssigned", self)
 	Apollo.RegisterEventHandler("LootRollWon", "OnLootRollWon", self)
-	Apollo.RegisterTimerHandler("LootStackUpdate", "OnLootStackUpdate", self)
 	Apollo.RegisterEventHandler("CombatLogLoot", "OnCombatLogLoot", self)
 	Apollo.RegisterEventHandler("InterfaceMenuListHasLoaded", "OnInterfaceMenuListHasLoaded", self)
+
+	Apollo.RegisterTimerHandler("LootStackUpdate", "OnLootStackUpdate", self)
+	Apollo.RegisterTimerHandler("KillSourceTimerUpdate", "OnKillSourceTimer", self)
 	Apollo.CreateTimer("LootStackUpdate", 0.1, true)
+	Apollo.CreateTimer("KillSourceTimerUpdate", 600, false)
+
+	--Apollo.RegisterEventHandler("BuybackItemsUpdated", "OnBuybackItemsUpdated", self) -- Player bought back an item
+	Apollo.RegisterEventHandler("CloseVendorWindow", "OnCloseVendorWindow", self) -- Player closed the vendor window
+	Apollo.RegisterEventHandler("InvokeVendorWindow", "OnInvokeVendorWindow", self) -- Player opened the ventor window
+	Apollo.RegisterEventHandler("CombatLogDamage", "OnCombatLogDamage", self) -- Combat Log for kills
+	Apollo.RegisterEventHandler("SalvageItemRequested", "OnSalvageItem", self)
+	Apollo.RegisterEventHandler("QuestStateChanged", "OnQuestStateChange", self)
 
 	-- Hooks
     --self.addonNeedVsGreed = Apollo.GetAddon("NeedVsGreed")
@@ -443,6 +509,49 @@ function FSLootTracker:OnLoad()
     --    self:RawHook(self.addonNeedVsGreed , "OnLootRollWon")
     --end
 end
+
+function FSLootTracker:OnInvokeVendorWindow()
+	self.tState.lastSource = "Vendor"
+end
+
+function FSLootTracker:OnCloseVendorWindow()
+	self.tState.lastSource = "Unknown"
+end
+
+function FSLootTracker:OnSalvageItem()
+	self.tState.lastSource = "Salvage/ItemBox"
+end
+
+function FSLootTracker:OnQuestStateChange(queUpdated, eState)
+	if queUpdated ~= nil then
+		local reward, money = queUpdated:GetRewardData()
+		if eState == Quest.QuestState_Completed then
+			if reward ~= nil then
+				self.tState.lastSource = "Quest"
+			end
+		end
+	end
+end
+
+-- CombatDamageLog is a good way to monitor kills
+function FSLootTracker:OnCombatLogDamage(tEventArgs)
+	-- something has been killed
+	if tEventArgs.bTargetKilled then
+		local unit = tEventArgs.unitTarget
+		if not unit:IsACharacter() then
+			-- set loot target and time stamp
+			self.tState.lastSource = unit:GetName()
+			-- Start Loot Timer to reset
+			Apollo.StartTimer("KillSourceTimerUpdate")
+		end
+	end
+end
+
+function FSLootTracker:OnKillSourceTimer()
+	self.tState.lastSource = "Unknown"
+	Apollo.StartTimer("KillSourceTimerUpdate")
+end
+
 
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker OnDocLoaded
@@ -455,7 +564,6 @@ function FSLootTracker:OnDocLoaded()
 			Apollo.AddAddonErrorText(self, "Could not load the main window for some reason.")
 			return
 		end
-		self.wndSessions = Apollo.LoadForm(self.xmlDoc, "SessionsForm", nil, self)
 		
 		-- item list
 		self.wndLootOpts = self.wndMain:FindChild("OptionsContainer")
@@ -473,6 +581,7 @@ function FSLootTracker:OnDocLoaded()
 		self.editConfigTimeFormat = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTimeFormat")
 		
 		self.wndProcessingIndicator = self.wndMain:FindChild("ProcessingIndicator")
+		self.wndSessions = self.wndMain:FindChild("SessionsForm")
 		
 		self.wndMain:Show(false, true)
 		self.wndSessions:Show(false)
@@ -502,10 +611,10 @@ end
 -- on SlashCommand "/loot"
 function FSLootTracker:OnLootTrackerOn()
 	if self.isOpen == true then
-		self.isOpen = false
+		self.tState.isOpen = false
 		self.wndMain:Close() -- hide the window
 	else
-		self.isOpen = true 
+		self.tState.isOpen = true 
 		self.wndMain:Invoke() -- show the window
 	end
 		
@@ -519,13 +628,13 @@ end
 -- when the OK button is clicked
 function FSLootTracker:OnOK( wndHandler, wndControl, eMouseButton )
 	self.wndMain:Close() -- hide the window
-	self.isOpen = false
+	self.tState.isOpen = false
 end
 
 -- when the Cancel button is clicked
 function FSLootTracker:OnCancel( wndHandler, wndControl, eMouseButton )
 	self.wndMain:Close() -- hide the window
-	self.isOpen = false
+	self.tState.isOpen = false
 end
 
 -- when the Clear button is clicked
@@ -554,7 +663,11 @@ end
 
 -- when the window is closed
 function FSLootTracker:OnWindowClosed( wndHandler, wndControl )
-	self.isOpen = false
+	self.tState.isOpen = false
+end
+
+function FSLootTracker:OnWindowMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
+	local l,t,r,b = self.wndMain:GetAnchorOffsets()
 end
 
 function FSLootTracker:OnSplashItemsCheck( wndHandler, wndControl, eMouseButton )
@@ -656,6 +769,12 @@ function FSLootTracker:OnAddItemButton( wndHandler, wndControl, eMouseButton )
 	end
 end
 
+function FSLootTracker:OnRecordingStopButton( wndHandler, wndControl, eMouseButton )
+end
+
+function FSLootTracker:OnRecordingStartButton( wndHandler, wndControl, eMouseButton )
+end
+
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker ClearLists
 -----------------------------------------------------------------------------------------------
@@ -671,8 +790,6 @@ function FSLootTracker:EmptyLists()
 		wnd:Destroy()
 	end
 
-	self.curItemCount = 0
-	self.curMoneyCount = 0
 	self.wndItemList:DestroyChildren()
 	self.wndMoneyList:DestroyChildren()
 	self.tItemWindows = {}
@@ -685,14 +802,12 @@ end
 function FSLootTracker:RebuildLists()
 	self:EmptyLists()
 	for idx,item in ipairs(self.tItems) do
-		self:AddItem(idx, item.item, item.nCount, item.looter, item.timeAdded, item.timeReported)
-		self.curItemCount = self.curItemCount + 1
+		self:AddItem(idx, item)
 	end
 	for idx,money in ipairs(self.tMoneys) do
-		self:AddMoney(idx, money.money, money.timeAdded, money.timeReported)
-		self.curMoneyCount = self.curMoneyCount + 1
+		self:AddMoney(idx, money)
 	end 
-	self.updateCount = 0
+	self.tState.updateCount = 0
 	self:RebuildExportList()
 	self:RefreshListDisplays()
 	self:RefreshStats()
@@ -713,15 +828,16 @@ end
 function FSLootTracker:RebuildExportList()
 	self.tItemsExport = {}
 	for idx, itemInstance in ipairs(self.tItems) do
+		local item = Item.GetDataFromId(tonumber(itemInstance.itemID))
+		
 		local tNewEntry =
 		{
-			itemID = itemInstance.item:GetItemId(),
-			itemName = itemInstance.item:GetName(),
-			itemQuality = itemInstance.item:GetItemQuality() or 1,
-			itemILvl = itemInstance.item:GetItemPower(),
-			itemType = itemInstance.item:GetItemTypeName(),
-			itemArt = itemInstance.item:GetIcon(),
-			count = itemInstance.nCount,
+			itemID = itemInstance.itemID,
+			itemName = itemInstance.name,
+			itemQuality = itemInstance.quality,
+			itemILvl = itemInstance.iLvl,
+			itemType = itemInstance.type,
+			count = itemInstance.count,
 			looter = itemInstance.looter,
 			cost = itemInstance.cost,
 			gameTimeAdded = itemInstance.timeAdded,
@@ -737,40 +853,40 @@ end
 function FSLootTracker:UpdateStats(addMoney)
 	self:Debug("Adding Money: " .. addMoney) 
 	-- Calculate Total Money
-	self.stats.totalMoney = self.stats.totalMoney + addMoney
+	self.tStats.totalMoney = self.tStats.totalMoney + addMoney
 	
 	-- Calculate Money Per Hour
 	if self.fFirstLoot ~= nil then
 		local timediff = os.difftime(self.fLastLoot, self.fFirstLoot)
 		if timediff > 0 then
-			self.stats.perHourMoney = (self.stats.totalMoney * 3600) / timediff 
+			self.tStats.perHourMoney = (self.tStats.totalMoney * 3600) / timediff 
 		else
-			self.stats.perHourMoney = addMoney
+			self.tStats.perHourMoney = addMoney
 		end
 	end
 	
 	-- Calculate Average Money
 	local nMoneyLoots = table.getn(self.tMoneys)
 	if nMoneyLoots > 0 then
-		self.stats.avgMoney = self.stats.totalMoney / nMoneyLoots
+		self.tStats.avgMoney = self.tStats.totalMoney / nMoneyLoots
 	else
-		self.stats.avgMoney = addMoney
+		self.tStats.avgMoney = addMoney
 	end
 	
 	-- Calculate Largest Loot
-	if addMoney > self.stats.largestDrop then
-		self.stats.largestDrop = addMoney
+	if addMoney > self.tStats.largestDrop then
+		self.tStats.largestDrop = addMoney
 	end
 
 	self:RefreshStats()
 end
 
 function FSLootTracker:RefreshStats()
-	self.wndTotalCash:SetAmount(self.stats.totalMoney)
-	self.wndPerHourCash:SetAmount(self.stats.perHourMoney)
-	self.wndAvgCash:SetAmount(self.stats.avgMoney)
-	self.wndJunkCash:SetAmount(self.stats.junkValue)
-	self.wndMostCash:SetAmount(self.stats.largestDrop)
+	self.wndTotalCash:SetAmount(self.tStats.totalMoney)
+	self.wndPerHourCash:SetAmount(self.tStats.perHourMoney)
+	self.wndAvgCash:SetAmount(self.tStats.avgMoney)
+	self.wndJunkCash:SetAmount(self.tStats.junkValue)
+	self.wndMostCash:SetAmount(self.tStats.largestDrop)
 end
 
 -- clear the item list
@@ -789,12 +905,10 @@ end
 -----------------------------------------------------------------------------------------------
 -- clear the item list
 function FSLootTracker:ClearLists()
-	self.curItemCount = 0
-	self.curMoneyCount = 0
 	self:DestroyItemList()
 	self:DestroyMoneyList()
-	for key,val in pairs(self.stats) do
-		self.stats[key] = 0
+	for key,val in pairs(self.tStats) do
+		self.tStats[key] = 0
 	end
 	self:RebuildLists()
 	self:RefreshStats()
@@ -810,8 +924,8 @@ end
 -----------------------------------------------------------------------------------------------
 
 -- add an item into the item list
-function FSLootTracker:AddItem(idx, item, count, looter, time, reportedTime)
-	self:Debug("Item Add Called for " .. item:GetName() .. ": (" .. item:GetItemId() .. ") x" .. count)
+function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
+	self:Debug("Item Add Called for " .. item.name .. ": (" .. item.itemID .. ") x" .. item.count)
 	-- load the window item for the list item
 	local wnd = Apollo.LoadForm(self.xmlDoc, "ListItem", self.wndItemList, self)
 	wndFlyoutBtn = wnd:FindChild("ContextButton")
@@ -819,84 +933,103 @@ function FSLootTracker:AddItem(idx, item, count, looter, time, reportedTime)
 	wndFlyoutBtn:FindChild("ContextFlyout"):Show(false)
 
 	--table.insert(self.tItems, wnd)
-	local iQuality = item:GetItemQuality() or 1
+	local iQuality = item.quality
 	-- give it a piece of data to refer to 
 	local wndItemText = wnd:FindChild("ItemText")
 	if wndItemText then -- make sure the text wnd exist
-		wndItemText:SetText(item:GetName())
+		wndItemText:SetText(item.name)
 		wndItemText:SetTextColor(karItemQuality[iQuality].Color)
 	end
 	-- give it a piece of data to refer to 
 	local wndItemType = wnd:FindChild("ItemType")
 	if wndItemType then -- make sure the text wnd exist
-		wndItemType:SetText(item:GetItemTypeName())
-		wndItemType:SetTextColor(kcrNormalText)
-	end
-	-- give it a piece of data to refer to 
-	local wndItemCount = wnd:FindChild("ItemCount")
-	if wndItemCount then -- make sure the text wnd exist
-		wndItemCount:SetText("x" .. count)
-		wndItemCount:SetTextColor(kcrNormalText)
+		wndItemType:SetText(item.type)
+		--wndItemType:SetTextColor(kcrNormalText)
 	end
 	-- give it a piece of data to refer to 
 	local wndItemPlayer = wnd:FindChild("ItemPlayer")
 	if wndItemPlayer then -- make sure the text wnd exist
-		wndItemPlayer:SetText(looter)
-		wndItemPlayer:SetTextColor(kcrNormalText)
+		wndItemPlayer:SetText(item.looter)
+		--wndItemPlayer:SetTextColor(kcrNormalText)
 	end	
+
 	-- give it a piece of data to refer to 
 	local wndItemTimestamp = wnd:FindChild("ItemTimestamp")
 	if wndItemTimestamp then -- make sure the text wnd exist
 		local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
-		wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime, strFormat))
+		wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(item.timeReported, strFormat))
 		--wndItemTimestamp:SetText(time)
-		wndItemTimestamp:SetTextColor(kcrNormalText)
+		--wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
+
+	-- give it a piece of data to refer to 
+	local wndItemSource = wnd:FindChild("ItemSource")
+	if wndItemSource then -- make sure the text wnd exist
+		wndItemSource:SetText(karLootSourcesNames[item.source])
+		--wndItemSource:SetTextColor(kcrNormalText)
+	end
+
+	-- give it a piece of data to refer to 
+	local wndItemZone = wnd:FindChild("ItemZone")
+	if wndItemZone then -- make sure the text wnd exist
+		wndItemZone:SetText(item.zone)
+	end
+	
+	-- give it a piece of data to refer to 
+	local wndItemSourceType = wnd:FindChild("ItemSourceType")
+	if wndItemSourceType then -- make sure the text wnd exist
+		wndItemSourceType:SetText(item.sourceType)
+	end
+
 	-- give it a piece of data to refer to 
 	local wndItemBorder = wnd:FindChild("ItemBorder")
 	if wndItemBorder then -- make sure the text wnd exist
-		wndItemBorder:SetSprite(karItemQuality[iQuality].SquareSprite)
 		local wndItemIcon = wndItemBorder:FindChild("ItemIcon")
 		if wndItemIcon then 
-			wndItemIcon:SetSprite(item:GetIcon())
+			wndItemIcon:SetSprite(item.icon)
 			wndItemIcon:SetData(idx)
 		end
+		wndItemBorder:SetSprite(karItemQuality[iQuality].SquareSprite)
+		wndItemBorder:SetText("x" .. item.count .. " ")
 	end
 
 	wnd:SetData(idx)
 	-- keep track of the window item created
-	self.tItemWindows[self.curItemCount] = wnd
-	self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount)
+	table.insert(self.tItemWindows, wnd)
+	--self.tItemWindows[self.curItemCount] = wnd
+	--self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount)
 end
 
 -----------------------------------------------------------------------------------------------
 -- AddMoney Functions
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:AddMoney(idx, money, time, reportedTime)
-	self:Debug("Money Add Called for " .. money:GetAmount())
+function FSLootTracker:AddMoney(idx, money)
+	self:Debug("Money Add Called for " .. money.moneyAmount)
 	-- load the window item for the list item
 	local wnd = Apollo.LoadForm(self.xmlDoc, "ListMoney", self.wndMoneyList, self)
 
-		local wndMoneyText = wnd:FindChild("MoneyText")
+	local wndMoneyText = wnd:FindChild("MoneyText")
 	if wndMoneyText then -- make sure the text wnd exist
 		local wndCashDisplay = wndMoneyText:FindChild("CashDisplay")
 		if wndCashDisplay then 
-			wndCashDisplay:SetAmount(money:GetAmount())	
+			wndCashDisplay:SetAmount(money.moneyAmount)
+			wndCashDisplay:SetMoneySystem(money.moneyType)
 		end
 	end
 
 	local wndMoneyTimestamp = wnd:FindChild("MoneyTimestamp")
 	if wndMoneyTimestamp then 
 		local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
-		wndMoneyTimestamp:SetText(Chronology:GetFormattedDateTime(reportedTime, strFormat))
+		wndMoneyTimestamp:SetText(Chronology:GetFormattedDateTime(money.timeReported, strFormat))
 		wndMoneyTimestamp:SetTextColor(kcrNormalText)
 	end
 
 	wnd:SetData(idx)
-	self:Debug("List Money created for item " .. wnd:GetData() .. " : " .. self.curMoneyCount)
+	--self:Debug("List Money created for item " .. wnd:GetData() .. " : " .. self.curMoneyCount)
 		
 	-- keep track of the window item created
-	self.tMoneyWindows[self.curMoneyCount] = wnd
+	table.insert(self.tMoneyWindows, wnd)
+	--self.tMoneyWindows[self.curMoneyCount] = wnd
 end
 ---------------------------------------------------------------------------------------------------
 -- ListItem Functions
@@ -906,7 +1039,6 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 -- Get Parent List item and associated item data. 
 	local idx = wndHandler:GetData()
 	local data = FSLootTrackerInst.tItems[idx]
-	local item = data.item
 	-- Load the item edit panel
 	if FSLootTrackerInst.wndEditWindow then
 		FSLootTrackerInst.wndEditWindow:Destroy()
@@ -914,36 +1046,36 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 	FSLootTrackerInst.wndEditWindow = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ItemEditWindow", nil, FSLootTrackerInst)
 	FSLootTrackerInst.wndEditWindow:Show(true)
 	
-	local iQuality = item:GetItemQuality() or 1
+	local iQuality = data.quality
 	-- give it a piece of data to refer to 
 	local wndItemILvl = FSLootTrackerInst.wndEditWindow:FindChild("ItemILvl")
 	if wndItemILvl then -- make sure the text wnd exist
-		wndItemILvl:SetText("iLvl: " .. item:GetItemPower())
+		wndItemILvl:SetText("iLvl: " .. data.iLvl)
 	end
 	
 	-- give it a piece of data to refer to 
 	local wndItemPower = FSLootTrackerInst.wndEditWindow:FindChild("ItemNumber")
 	if wndItemPower then -- make sure the text wnd exist
-		wndItemPower:SetText("Item #: " .. item:GetItemId())
+		wndItemPower:SetText("Item #: " .. data.itemID)
 	end
 	
 	-- give it a piece of data to refer to 
 	local wndItemText = FSLootTrackerInst.wndEditWindow:FindChild("ItemText")
 	if wndItemText then -- make sure the text wnd exist
-		wndItemText:SetText(item:GetName())
+		wndItemText:SetText(data.name)
 		wndItemText:SetTextColor(karItemQuality[iQuality].Color)
 	end
 	
 	-- give it a piece of data to refer to 
 	local wndItemType = FSLootTrackerInst.wndEditWindow:FindChild("ItemType")
 	if wndItemType then -- make sure the text wnd exist
-		wndItemType:SetText(item:GetItemTypeName())
+		wndItemType:SetText(data.type)
 	end
 	
 	-- give it a piece of data to refer to 
 	local wndItemCount = FSLootTrackerInst.wndEditWindow:FindChild("ItemCount")
 	if wndItemCount then -- make sure the text wnd exist
-		wndItemCount:SetText(data.nCount)
+		wndItemCount:SetText(data.count)
 	end
 	
 	-- give it a piece of data to refer to 
@@ -972,7 +1104,7 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 		wndItemBorder:SetSprite(karItemQuality[iQuality].SquareSprite)
 		local wndItemIcon = wndItemBorder:FindChild("ItemIcon")
 		if wndItemIcon then 
-			wndItemIcon:SetSprite(item:GetIcon())
+			wndItemIcon:SetSprite(data.icon)
 			wndItemIcon:SetData(idx)
 		end
 	end
@@ -983,7 +1115,8 @@ end
 function FSLootTracker:OnGenerateTooltip( wndHandler, wndControl, eToolTipType, x, y )
 	--if wndControl ~= wndHandler then return end
 	wndControl:SetTooltipDoc(nil)
-	local item = FSLootTrackerInst.tItems[wndHandler:GetData()].item
+	local itemID = FSLootTrackerInst.tItems[wndHandler:GetData()].itemID
+	local item = Item.GetDataFromId(tonumber(itemID))
 	local itemEquipped = item:GetEquippedItemForItemType()
 	Tooltip.GetItemTooltipForm(self, wndControl, item, {bPrimary = true, bSelling = false, itemCompare = itemEquipped})
 	-- Tooltip.GetItemTooltipForm(self, wndControl, itemEquipped, {bPrimary = false, bSelling = false, itemCompare = item})
@@ -1026,7 +1159,8 @@ end
 
 function FSLootTracker:OnLinkItem( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
 	-- Get Parent List item and associated item data. 
-	local oItem = FSLootTrackerInst.tItems[wndHandler:GetData()].item
+	local itemID = FSLootTrackerInst.tItems[wndHandler:GetData()].itemID
+	local oItem = Item.GetDataFromId(tonumber(itemID))
 	-- Shift Right click
 	if Apollo.IsShiftKeyDown() and eMouseButton == 1 then
 		Event_FireGenericEvent("ItemLink", oItem)
@@ -1056,7 +1190,7 @@ function FSLootTracker:OnEditSaveButton( wndHandler, wndControl, eMouseButton )
 	-- give it a piece of data to refer to 
 	local wndItemCount = FSLootTrackerInst.wndEditWindow:FindChild("ItemCount")
 	if wndItemCount then -- make sure the text wnd exist
-		FSLootTrackerInst.tItems[idx].nCount = wndItemCount:GetText()
+		FSLootTrackerInst.tItems[idx].count = wndItemCount:GetText()
 	end
 	
 	-- give it a piece of data to refer to 
@@ -1115,7 +1249,7 @@ end
 -- FSLootTracker SAVE/RESTORE Functions
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnSave(eLevel)
-	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.General then 
+	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then 
 		return 
   	end
   
@@ -1128,46 +1262,36 @@ function FSLootTracker:OnSave(eLevel)
 end
 
 function FSLootTracker:OnRestore(eLevel, tSavedData)
-	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.General then
+	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then
 		return
 	end
-	
-	if tSavedData.tItems then
-		self.tItems = shallowcopy(tSavedData.tItems)
-		-- Carbine doesn't store the userdata item object
-		-- when it saves data. We need to reload the items, 
-		-- then based on the stored item ID.
-		for idx, v in ipairs(self.tItems) do
-			self.tItems[idx].item = Item.GetDataFromId(tonumber(v.itemID))
-		end
-	else	
-		self.tItems = {}
-	end
-	
-	-- TODO: Money Loot is being stored the same way as items, we need to find a way to 
-	-- create a Money Packet and what information needs to be saved to restore that userdata
-	-- Disabled for now 
-	-----------------------------------------------------------------------------------------
-	if tSavedData.tMoney then
-		self.tMoneys = shallowcopy(tSavedData.tMoneys)
-		-- Carbine doesn't store the userdata money object
-		-- when it saves data. We need to recreate the money 
-		-- objects
-		for idx, v in ipairs(self.tMoneys) do
-			local m = Money:new()
-			m:SetAmount(tonumber(v.moneyAmount))
-			m:SetMoneyType(tonumber(v.moneyType))
-			m:SetAltType(tonumber(v.moneyAltType))
-			self.tMoneys[idx].money = m
-		end
-	else
-		self.tMoneys = {}	
-	end
 
+	-- Restore Configuration
 	if tSavedData.tConfig then
 		self.tConfig = shallowcopy(tSavedData.tConfig)
+		-- Fill in any missing values from the default options
+		-- This Protects us from configuration additions in the future
+		for key, value in pairs(tDefaultOptions) do
+			if self.tConfig[key] == nil then
+				self.tConfig[key] = tDefaultOptions[key]
+			end
+		end
 	else
 		self.tConfig = shallowcopy(tDefaultOptions)
+	end
+	
+	if self.tConfig.persistSession == true then
+		if tSavedData.tItems then
+			self.tItems = shallowcopy(tSavedData.tItems)
+		else	
+			self.tItems = {}
+		end
+		
+		if tSavedData.tMoney then
+			self.tMoneys = shallowcopy(tSavedData.tMoneys)
+		else
+			self.tMoneys = {}	
+		end
 	end
 end
 
