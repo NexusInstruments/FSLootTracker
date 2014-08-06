@@ -29,6 +29,13 @@ function Cache:new(o)
 	return o
 end
 
+function Cache:GetValue(key)
+	if self.cache[key] then 
+		return self.cache[key]
+	end
+	return nil
+end
+
 function Cache:GetAddValue(key)
 	if self.cache[key] then 
 		return self.cache[key]

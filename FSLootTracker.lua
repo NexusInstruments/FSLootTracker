@@ -947,9 +947,9 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
 	wndFlyoutBtn:SetCheck(false)
 	wndFlyoutBtn:FindChild("ContextFlyout"):Show(false)
 
-	local itemData = self.tCache.ItemCache:GetKeyFromValue(item.itemID)
+	local itemData = self.tCache.ItemCache:GetValue(item.itemID)
 	--table.insert(self.tItems, wnd)
-	local iQuality = itemDate.quality
+	local iQuality = itemData.quality
 	-- give it a piece of data to refer to 
 	local wndItemText = wnd:FindChild("ItemText")
 	if wndItemText then -- make sure the text wnd exist
@@ -1062,7 +1062,7 @@ function FSLootTracker:CreateEditWindow( wndHandler )
 	FSLootTrackerInst.wndEditWindow = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ItemEditWindow", nil, FSLootTrackerInst)
 	FSLootTrackerInst.wndEditWindow:Show(true)
 	
-	local itemData = self.tCache.ItemCache:GetKeyFromValue(data.itemID)
+	local itemData = self.tCache.ItemCache:GetValue(data.itemID)
 	local iQuality = itemData.quality
 	-- give it a piece of data to refer to 
 	local wndItemILvl = FSLootTrackerInst.wndEditWindow:FindChild("ItemILvl")
@@ -1282,7 +1282,7 @@ function FSLootTracker:OnSave(eLevel)
 		tCache = {
 			LooterCache = self.tCache.LooterCache.cache,
 			SourceCache = self.tCache.SourceCache.cache,
-			ZoneCache = self.tCache.ZoneCache.cache
+			ZoneCache = self.tCache.ZoneCache.cache,
 			ItemCache = self.tCache.ItemCache.cache
 		}
 	}
