@@ -38,13 +38,15 @@ local karDataTypes = {
 local karLootSources = {
 	["Normal"] = 0,
 	["Rolled"] = 1,
-	["Master"] = 2
+	["Master"] = 2,
+	["Entered"] = 3
 }
 
 local karLootSourcesNames = {
 	[0] = "Normal",
 	[1] = "Rolled",
-	[2] = "Master"
+	[2] = "Master",
+	[3] = "Entered"
 }
 
 local karItemQualityNames = {
@@ -168,8 +170,13 @@ local strDefaultGuildInfoText =
 	"<FOR SCIENCE>\n" ..
 	"Dominion / PvE\n" .. 
 	"Caretaker-US\n\n" ..
-	"http://forscienceguild.org"
-	
+	"http://forscienceguild.org\n\n" ..
+	"_.,-*~'`^`'~*-,._\n\n" ..
+	"--- Alpha Testers ---\n" .. 
+	"Tasho--Caretaker-US\n" ..
+	"Steman--Caretaker-US\n" ..
+	"Yosara--Caretaker-US\n" ..
+	"Kopernikus--Caretaker-US\n"
 
 function shallowcopy(orig)
     local orig_type = type(orig)
@@ -219,7 +226,8 @@ function FSLootTracker:new(o)
 		SourceCache = {},
 		ZoneCache = {},
 		LooterCache = {},
-		ItemCache = {}
+		ItemCache = {},
+		KillCache = {}
 	}
 	
 	o.tQueuedEntryData = {}		-- keep track of all recently looted items to process
@@ -460,8 +468,9 @@ end
 -- FSLootTracker AddQueuedItem
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnInterfaceMenuListHasLoaded()
-	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "FSLootTracker", {"Generic_ToggleLoot", "", "FSLootSprites:TransChestSmall"})
+	Event_FireGenericEvent("InterfaceMenuList_NewAddOn", "FSLootTracker", {"Generic_ToggleLoot", "", "FSLootSprites:BigChest"})
 	--self:UpdateInterfaceMenuAlerts()
+	strPlayerName = GameLib.GetPlayerUnit():GetName()
 	self:RebuildLists()
 	self:RefreshStats()
 end
@@ -470,7 +479,6 @@ end
 -- FSLootTracker OnLoad
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLoad()
-	-- Load custom sprite sheet
 	Apollo.LoadSprites("FSLootSprites.xml")
 	
 	-- load our form file
@@ -484,7 +492,6 @@ function FSLootTracker:OnLoad()
 		self.tCache[key] = Cache:new()
 	end
 	
-	strPlayerName = GameLib.GetPlayerUnit():GetName()
 	-- Library Embeds
 	Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
 	--Apollo.GetPackage("Gemini:Hook-1.0").tPackage:Embed(self)
@@ -547,7 +554,9 @@ function FSLootTracker:OnCombatLogDamage(tEventArgs)
 		local unit = tEventArgs.unitTarget
 		if not unit:IsACharacter() then
 			-- set loot target and time stamp
-			self.tState.lastSource = unit:GetName()
+			local strUnitName = unit:GetName()
+			self.tCache.KillCache:GetAddValue(strUnitName)
+			self.tState.lastSource = strUnitName
 			-- Start Loot Timer to reset
 			Apollo.StartTimer("KillSourceTimerUpdate")
 		end
@@ -617,7 +626,7 @@ end
 
 -- on SlashCommand "/loot"
 function FSLootTracker:OnLootTrackerOn()
-	if self.isOpen == true then
+	if self.tState.isOpen == true then
 		self.tState.isOpen = false
 		self.wndMain:Close() -- hide the window
 	else
@@ -773,6 +782,7 @@ function FSLootTracker:OnAddItemButton( wndHandler, wndControl, eMouseButton )
 	if not FSLootTrackerInst.wndAddItem then
 		FSLootTrackerInst.wndAddItem = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ItemAddWindow", nil, FSLootTrackerInst)		
 		FSLootTrackerInst.wndAddItem:Show(true)
+		--FSLootTrackerInst.
 	end
 end
 
@@ -978,6 +988,13 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
 		--wndItemTimestamp:SetTextColor(kcrNormalText)
 	end
 
+	-- give it a piece of data to refer to 
+	local wndItemValue = wnd:FindChild("ItemValue")
+	if wndItemValue then -- make sure the text wnd exist
+		wndItemValue:SetAmount(itemData.value)
+		wndItemValue:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
+	end
+	
 	-- give it a piece of data to refer to 
 	local wndItemSource = wnd:FindChild("ItemSource")
 	if wndItemSource then -- make sure the text wnd exist
@@ -1398,6 +1415,9 @@ function FSLootTracker:OnItemAddClosed( wndHandler, wndControl )
 		FSLootTrackerInst.wndAddItem:Destroy()
 		FSLootTrackerInst.wndAddItem = nil
 	end
+end
+
+function FSLootTracker:OnAddLookupItem( wndHandler, wndControl, eMouseButton )
 end
 
 -----------------------------------------------------------------------------------------------
