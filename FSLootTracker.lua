@@ -15,6 +15,8 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
+local FSDataVersion = "2.0"
+
 local FSLootTracker = {} 
 local FSLootTrackerInst
 
@@ -305,27 +307,38 @@ function FSLootTracker:OnLootedMoney(moneyInstance)
 end
 
 -----------------------------------------------------------------------------------------------
--- FSLootTracker OnLootedItem
+-- FSLootTracker GetLootItemEventData
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:OnLootedItem(itemInstance, itemCount)
-	--queue recently added items
-	self:Debug("Item Looted: " .. itemInstance:GetName())
+function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource, itemLooter)
+	local iQuality = itemInstance:GetItemQuality() or Item.CodeEnumItemQuality.Average
+	local iValue = itemInstance:GetSellPrice():GetAmount() or 0
 
-	self:CacheItem(itemInstance)
 	local tNewEntry =
 	{
 		recordType = karDataTypes.item,
 		itemID = itemInstance:GetItemId(),
 		count = itemCount,
 		cost = self.tConfig.defaultCost,
-		looter = self.tCache.LooterCache:GetAddValue(strPlayerName),
+		looter = self.tCache.LooterCache:GetAddValue(itemLooter),
+		quality = iQuality,
 		source =  self.tCache.SourceCache:GetAddValue(self.tState.lastSource),
-		sourceType = karLootSources["Normal"],
+		sourceType = karLootSources[itemSource],
 		timeAdded = GameLib.GetGameTime(),
 		timeReported = GameLib.GetLocalTime(),
-		zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName)
+		zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName),
+		value = iValue
 	}
-	table.insert(self.tQueuedEntryData, tNewEntry)
+	return tNewEntry
+end
+
+-----------------------------------------------------------------------------------------------
+-- FSLootTracker OnLootedItem
+-----------------------------------------------------------------------------------------------
+function FSLootTracker:OnLootedItem(itemInstance, itemCount)
+	--queue recently added items
+	self:Debug("Item Looted: " .. itemInstance:GetName())
+	self:CacheItem(itemInstance)
+	table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemInstance, itemCount, "Normal", strPlayerName))
 	self.fLastTimeAdded = GameLib.GetGameTime()	
 end
 
@@ -336,20 +349,7 @@ function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
 	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
 	if strWinner ~= GameLib.GetPlayerUnit():GetName() then
 		self:CacheItem(itemLooted)
-		local tNewEntry =
-		{
-			recordType = karDataTypes.item,
-			itemID = itemLooted:GetItemId(),
-			count = 1,
-			cost = self.tConfig.defaultCost,
-			looter = self.tCache.LooterCache:GetAddValue(strWinner),
-			source = self.tCache.SourceCache:GetAddValue(self.tState.lastSource),
-			sourceType = karLootSources["Rolled"],		
-			timeAdded = GameLib.GetGameTime(),
-			timeReported = GameLib.GetLocalTime(),
-			zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName)
-		}
-		table.insert(self.tQueuedEntryData, tNewEntry)
+		table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemLooted, 1, "Rolled", strWinner))
 		self.fLastTimeAdded = GameLib.GetGameTime()	
 	end
 end
@@ -363,20 +363,7 @@ function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
 	-- Since this will be caught by the onLootItem event automatically
 	if strLooter ~= GameLib.GetPlayerUnit():GetName() then
 		self:CacheItem(itemInstance)
-		local tNewEntry =
-		{
-			recordType = karDataTypes.item,
-			itemID = itemInstance:GetItemId(),
-			count = 1,
-			cost = self.tConfig.defaultCost,
-			looter = self.tCache.LooterCache:GetAddValue(strLooter),
-			source =  self.tCache.SourceCache:GetAddValue(self.tState.lastSource),
-			sourceType = karLootSources["Master"],		
-			timeAdded = GameLib.GetGameTime(),
-			timeReported = GameLib.GetLocalTime(),
-			zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName)
-		}
-		table.insert(self.tQueuedEntryData, tNewEntry)
+		table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemInstance, 1, "Master", strLooter))
 		self.fLastTimeAdded = GameLib.GetGameTime()	
 	end
 end
@@ -672,8 +659,31 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
 	if eMouseButton == 0 and bDoubleClick then -- Double Left Click
 		FSLootTrackerInst:CreateEditWindow( wndHandler )
 	end
+
 	if eMouseButton == 1 then -- Right Clicked
-		-- TODO: Open Context Dialog
+		-- Shift Right click
+		if Apollo.IsShiftKeyDown() then
+			local itemID = FSLootTrackerInst.tItems[wndHandler:GetData()].itemID
+			local oItem = Item.GetDataFromId(tonumber(itemID))
+			Event_FireGenericEvent("ItemLink", oItem)
+		else
+			-- Close the last context window if you've opened a different one.
+			local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
+	
+			if wndLastItemControl ~= nil then
+				wndLastItemControl:Show(false)
+				wndLastItemControl:Destroy()
+			end
+			-- TODO: Open Context Dialog
+			FSLootTrackerInst.wndLastItemControl = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ContextFlyout", nil, FSLootTrackerInst)
+
+			local l, t, r, b = FSLootTrackerInst.wndLastItemControl:GetAnchorPoints()
+			local w, h = (r-l), (b-t)
+			
+			-- Position it
+			FSLootTrackerInst.wndLastItemControl:SetAnchorOffsets(nLastRelativeMouseX, nLastRelativeMouseY, nLastRelativeMouseX + w, nLastRelativeMouseY + h)	
+			FSLootTrackerInst.wndLastItemControl:Show(true)
+		end
 	end	
 end
 
@@ -1293,6 +1303,7 @@ function FSLootTracker:OnSave(eLevel)
   	end
   
 	local tSavedData = {
+		dataVersion = FSDataVersion,
 		tConfig = self.tConfig,
 		tItems = self.tItems,
 		tMoneys = self.tMoneys,
@@ -1312,42 +1323,46 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 	end
 
 	-- Restore Configuration
-	if tSavedData.tConfig then
-		self.tConfig = shallowcopy(tSavedData.tConfig)
-		-- Fill in any missing values from the default options
-		-- This Protects us from configuration additions in the future
-		for key, value in pairs(tDefaultOptions) do
-			if self.tConfig[key] == nil then
-				self.tConfig[key] = tDefaultOptions[key]
+	if tSavedData == FSDataVersion then
+		if tSavedData.tConfig then
+			self.tConfig = shallowcopy(tSavedData.tConfig)
+			-- Fill in any missing values from the default options
+			-- This Protects us from configuration additions in the future
+			for key, value in pairs(tDefaultOptions) do
+				if self.tConfig[key] == nil then
+					self.tConfig[key] = tDefaultOptions[key]
+				end
+			end
+		else
+			self.tConfig = shallowcopy(tDefaultOptions)
+		end
+		
+		if self.tConfig.persistSession == true then
+			-- Rebuild the Cache
+			if tSavedData.tCache then
+				for k, v in pairs(tSavedData.tCache) do
+					for key, value in pairs(tSavedData.tCache[k]) do
+						self.tCache[k]:AddKeyValue(key,value)
+					end
+				end
+			end
+	
+			-- Load the Item Data	
+			if tSavedData.tItems then
+				self.tItems = shallowcopy(tSavedData.tItems)
+			else	
+				self.tItems = {}
+			end
+			
+			-- Load the Money Data	
+			if tSavedData.tMoney then
+				self.tMoneys = shallowcopy(tSavedData.tMoneys)
+			else
+				self.tMoneys = {}	
 			end
 		end
 	else
 		self.tConfig = shallowcopy(tDefaultOptions)
-	end
-	
-	if self.tConfig.persistSession == true then
-		-- Rebuild the Cache
-		if tSavedData.tCache then
-			for k, v in pairs(tSavedData.tCache) do
-				for key, value in pairs(tSavedData.tCache[k]) do
-					self.tCache[k]:AddKeyValue(key,value)
-				end
-			end
-		end
-
-		-- Load the Item Data	
-		if tSavedData.tItems then
-			self.tItems = shallowcopy(tSavedData.tItems)
-		else	
-			self.tItems = {}
-		end
-		
-		-- Load the Money Data	
-		if tSavedData.tMoney then
-			self.tMoneys = shallowcopy(tSavedData.tMoneys)
-		else
-			self.tMoneys = {}	
-		end
 	end
 end
 
