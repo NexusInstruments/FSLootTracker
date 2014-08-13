@@ -244,7 +244,6 @@ function FSLootTracker:new(o)
 	o.wndSelectedListItem = nil	-- keep track of which list item is currently selected
 	o.wndEditWindow = nil
 	o.wndInfoWindow = nil
-	o.wndLastItemControl = nil
 
 	return o
 end
@@ -311,7 +310,11 @@ end
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource, itemLooter)
 	local iQuality = itemInstance:GetItemQuality() or Item.CodeEnumItemQuality.Average
-	local iValue = itemInstance:GetSellPrice():GetAmount() or 0
+
+	local iValue = 0
+	if itemInstance:GetSellPrice() ~= nil then
+		iValue = itemInstance:GetSellPrice():GetAmount() 
+	end
 
 	local tNewEntry =
 	{
@@ -585,10 +588,12 @@ function FSLootTracker:OnDocLoaded()
 		
 		self.wndProcessingIndicator = self.wndMain:FindChild("ProcessingIndicator")
 		self.wndSessions = self.wndMain:FindChild("SessionsForm")
+		self.wndContextFlyout = self.wndMain:FindChild("ContextFlyout")
 		
 		self.wndMain:Show(false, true)
 		self.wndSessions:Show(false)
 		self.wndLootOpts:Show(false)
+		self.wndContextFlyout:Show(false)
 		self.wndProcessingIndicator:Show(false)
 
 		self.wndItemList:Show(true)
@@ -657,6 +662,7 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
 	end
 
 	if eMouseButton == 0 and bDoubleClick then -- Double Left Click
+		FSLootTrackerInst.wndContextFlyout:Show(false)	
 		FSLootTrackerInst:CreateEditWindow( wndHandler )
 	end
 
@@ -668,21 +674,13 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
 			Event_FireGenericEvent("ItemLink", oItem)
 		else
 			-- Close the last context window if you've opened a different one.
-			local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
-	
-			if wndLastItemControl ~= nil then
-				wndLastItemControl:Show(false)
-				wndLastItemControl:Destroy()
-			end
-			-- TODO: Open Context Dialog
-			FSLootTrackerInst.wndLastItemControl = Apollo.LoadForm(FSLootTrackerInst.xmlDoc, "ContextFlyout", nil, FSLootTrackerInst)
-
-			local l, t, r, b = FSLootTrackerInst.wndLastItemControl:GetAnchorPoints()
+			local l, t, r, b = FSLootTrackerInst.wndContextFlyout:GetAnchorOffsets()
 			local w, h = (r-l), (b-t)
 			
 			-- Position it
-			FSLootTrackerInst.wndLastItemControl:SetAnchorOffsets(nLastRelativeMouseX, nLastRelativeMouseY, nLastRelativeMouseX + w, nLastRelativeMouseY + h)	
-			FSLootTrackerInst.wndLastItemControl:Show(true)
+			FSLootTrackerInst.wndContextFlyout:SetAnchorOffsets(nLastRelativeMouseX - w, nLastRelativeMouseY + h, nLastRelativeMouseX, nLastRelativeMouseY + h + h)	
+			FSLootTrackerInst.wndContextFlyout:Show(true)
+			FSLootTrackerInst.wndLastItemSelected = wndHandler
 		end
 	end	
 end
@@ -690,6 +688,7 @@ end
 -- when the window is closed
 function FSLootTracker:OnWindowClosed( wndHandler, wndControl )
 	self.tState.isOpen = false
+	self.wndContextFlyout:Show(false)
 end
 
 function FSLootTracker:OnWindowMove( wndHandler, wndControl, nOldLeft, nOldTop, nOldRight, nOldBottom )
@@ -802,14 +801,15 @@ end
 function FSLootTracker:OnRecordingStartButton( wndHandler, wndControl, eMouseButton )
 end
 
+function FSLootTracker:OnMouseDown( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+	--FSLootTrackerInst.wndContextFlyout:Show(false)
+end
+
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker ClearLists
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:EmptyLists()
-	if self.wndLastItemControl then
-		self.wndLastItemControl:Show(false)
-		self.wndLastItemControl = nil	
-	end
+	self.wndContextFlyout:Show(false)
 	for idx,wnd in ipairs(self.tItemWindows) do
 		wnd:Destroy()
 	end
@@ -963,9 +963,9 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
 	self:Debug("Item Add Called for (" .. item.itemID .. ") x" .. item.count)
 	-- load the window item for the list item
 	local wnd = Apollo.LoadForm(self.xmlDoc, "ListItem", self.wndItemList, self)
-	wndFlyoutBtn = wnd:FindChild("ContextButton")
-	wndFlyoutBtn:SetCheck(false)
-	wndFlyoutBtn:FindChild("ContextFlyout"):Show(false)
+	--wndFlyoutBtn = wnd:FindChild("ContextButton")
+	--wndFlyoutBtn:SetCheck(false)
+	--wndFlyoutBtn:FindChild("ContextFlyout"):Show(false)
 
 	local itemData = self.tCache.ItemCache:GetValue(item.itemID)
 	--table.insert(self.tItems, wnd)
@@ -1169,39 +1169,30 @@ function FSLootTracker:OnGenerateTooltip( wndHandler, wndControl, eToolTipType, 
 	-- Tooltip.GetItemTooltipForm(self, wndControl, itemEquipped, {bPrimary = false, bSelling = false, itemCompare = item})
 end
 
-function FSLootTracker:OnToggleItemFlyout( wndHandler, wndControl, eMouseButton )
-	-- Close the last context window if you've opened a different one.
-	local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
-	
-	if wndLastItemControl and wndLastItemControl ~= nil then
-		if wndControl ~= wndLastItemControl  then
-			wndLastItemControl:SetCheck(false)
-			wndLastItemControl:FindChild("ContextFlyout"):Show(false)
-		end
-	end
-	wndControl:FindChild("ContextFlyout"):Show(wndControl:IsChecked())
-    FSLootTrackerInst.wndLastItemControl = wndControl
-end
-
 function FSLootTracker:OnEditBtnClicked( wndHandler, wndControl, eMouseButton )
-	local wndLastItemControl = FSLootTrackerInst.wndLastItemControl
-	
-	if wndLastItemControl and wndLastItemControl ~= nil then
-		wndLastItemControl:SetCheck(false)
-		wndLastItemControl:FindChild("ContextFlyout"):Show(false)
-	end
+	FSLootTrackerInst.wndContextFlyout:Show(false)	
 	
 	-- Get Parent List item and associated item data. 
-	FSLootTrackerInst:CreateEditWindow( wndHandler:GetParent():GetParent():GetParent():GetParent() )
+	FSLootTrackerInst:CreateEditWindow( FSLootTrackerInst.wndLastItemSelected )
 end
 
 function FSLootTracker:OnDeleteBtnClicked( wndHandler, wndControl, eMouseButton )
 	-- Get Parent List item and associated item data. 
-	local index = wndHandler:GetParent():GetParent():GetParent():GetParent():GetData()
+	local index = FSLootTrackerInst.wndLastItemSelected:GetData()
 	wndHandler:Show(false)
 	table.remove(FSLootTrackerInst.tItems, index)
-	FSLootTrackerInst.wndLastItemControl = nil
+	FSLootTrackerInst.wndContextFlyout:Show(false)
 	FSLootTrackerInst:RebuildLists()
+end
+
+function FSLootTracker:OnBlacklistBtnClicked( wndHandler, wndControl, eMouseButton )
+	FSLootTrackerInst.wndContextFlyout:Show(false)	
+	-- Get Parent List item and associated item data. 
+end
+
+function FSLootTracker:OnItemExportBtnClicked( wndHandler, wndControl, eMouseButton )
+	FSLootTrackerInst.wndContextFlyout:Show(false)	
+	-- Get Parent List item and associated item data. 
 end
 
 function FSLootTracker:OnLinkItem( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
