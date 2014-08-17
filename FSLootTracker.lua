@@ -593,13 +593,21 @@ function FSLootTracker:OnDocLoaded()
 		self.wndMain:Show(false, true)
 		self.wndSessions:Show(false)
 		self.wndLootOpts:Show(false)
-		self.wndContextFlyout:Show(false)
 		self.wndProcessingIndicator:Show(false)
 
 		self.wndItemList:Show(true)
 		self.wndMoneyWindow:Show(true)
 		self.wndMoneyWindow:Show(false)
 		self.wndMain:FindChild("HeaderButtons"):FindChild("SplashItemsBtn"):SetCheck(true)
+		
+		local l, t, r, b = FSLootTrackerInst.wndContextFlyout:GetAnchorOffsets()
+		local w, h = (r-l), (b-t)
+		self.tContextFlyoutSize = {
+			width = w,
+			height = h
+		}
+		self.wndContextFlyout:Show(false)
+
 		-- if the xmlDoc is no longer needed, you should set it to nil
 		-- self.xmlDoc = nil
 		
@@ -660,9 +668,10 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
 	if wndHandler ~= wndControl then
 		return
 	end
+	
+	FSLootTrackerInst.wndContextFlyout:Show(false)
 
 	if eMouseButton == 0 and bDoubleClick then -- Double Left Click
-		FSLootTrackerInst.wndContextFlyout:Show(false)	
 		FSLootTrackerInst:CreateEditWindow( wndHandler )
 	end
 
@@ -674,11 +683,10 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
 			Event_FireGenericEvent("ItemLink", oItem)
 		else
 			-- Close the last context window if you've opened a different one.
-			local l, t, r, b = FSLootTrackerInst.wndContextFlyout:GetAnchorOffsets()
-			local w, h = (r-l), (b-t)
-			
+			local mousePos = Apollo.GetMouse()
+			--Print(self:JSONEncode(mousePos))
 			-- Position it
-			FSLootTrackerInst.wndContextFlyout:SetAnchorOffsets(nLastRelativeMouseX - w, nLastRelativeMouseY + h, nLastRelativeMouseX, nLastRelativeMouseY + h + h)	
+			FSLootTrackerInst.wndContextFlyout:SetAnchorOffsets(mousePos.x - FSLootTrackerInst.tContextFlyoutSize.width, mousePos.y, mousePos.x , mousePos.y + FSLootTrackerInst.tContextFlyoutSize.height)	
 			FSLootTrackerInst.wndContextFlyout:Show(true)
 			FSLootTrackerInst.wndLastItemSelected = wndHandler
 		end
@@ -803,6 +811,10 @@ end
 
 function FSLootTracker:OnMouseDown( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
 	--FSLootTrackerInst.wndContextFlyout:Show(false)
+end
+
+function FSLootTracker:OnContextClosed( wndHandler, wndControl )
+	FSLootTrackerInst.wndContextFlyout:Show(false)
 end
 
 -----------------------------------------------------------------------------------------------
