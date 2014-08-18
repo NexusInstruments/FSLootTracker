@@ -1,0 +1,53 @@
+Version 1.9.1
+* Fixed projects provisioning files
+
+Version 1.9.0
+* Switched to the new 2.0.0 user interface.
+* Money tab now correctly tracks all currencies gained not just gold.
+* Add (non-functional) sort buttons to the item tracker.
+* To address the stuttering issue causes by the previous versions, the entire loot pipeline has been reworked.
+* Added Zone, Item, Looter, Source caching to support the new pipeline.
+* Added a sanity filter for when the configuration data format change. The addon will now discard old configuration data if it's not at the same format version.
+* Changed the context menu for items to appear on right-click. (The positioning is still buggy)
+* Updated the tracked loot to show more details This now tracks:
+** Source
+** Value
+** Loot Type
+** Zone
+
+Version 1.8.4
+* Tracked Items now persist between session (money soon)
+* Fixed a bug that would orphan some windows if the main window was closed by hitting escape
+* Added framework for Session management. This will be in the next release.
+* Added framework for Manually adding items to the list. This will be in the next release
+
+Version 1.8.0
+* Added Time Format Options for 12h/24h Format switching
+* Fixed a bug where Export window would not reopen
+* Added confirmation screen to clear tracked data. You will now be prompted before clearing the loot
+* Fixed a bug where the tracker would attempt to access the Processing Indicator before it was loaded.
+
+Version 1.7.8
+* Added a Processing Indicator to show when the add-on is backlogged and processing the item queue
+* Added Dates to the timestamp display for the item loots
+* Changed the date format to 24-Hour format
+* Added the Chronology library (https://github.com/chronosis/Chronology) to the addon
+
+Version 1.7.5
+* Moved add-on information into modal panel and button
+* Changed exported data string to be "Pretty Printed"
+* Fixed the Export data window to support large strings
+* Re-styled the Export and Edit windows.
+
+Version 1.7.3
+* Fixed a bug where it was double reporting loot when rolled and won by the player running the addon
+* Fixed an issue where it was impossible to copy the export text.
+
+Version 1.7.2
+* Added support for Quality Filters -- they're working now. Yay!
+* Fixed a bug where junk items that had no sell cost would cause an error
+* Fixed an issue where the add-on would cause significant slow down in the game once the the tracked items list was sufficiently large enough.
+* Added double-click to edit support
+* Added support for persisting add-on setting. They are now saved and restored between sessions.
+* Fixed a bug where it was double reporting loot when rolled and won by the player running the addon
+* Fixed an issue where it was impossible to copy the export text.
