@@ -1,11 +1,26 @@
-local C_MAJOR, C_MINOR = "Chronology-1.0", 1
+local C_MAJOR, C_MINOR = "Chronology-1.0", 2
 local C_Pkg = Apollo.GetPackage(C_MAJOR)
-if C_Pkg and (C_Pkg.nVersion or 0) >= MINOR then
+if C_Pkg and (C_Pkg.nVersion or 0) >= C_MINOR then
 	return -- no upgrade needed
 end
 
 -- Set a reference to the actual package or create an empty table
 local Chronology = C_Pkg and C_Pkg.tPackage or {}
+
+local ktMonthNumDays = {
+	[1] = 31,
+	[2] = 28,
+	[3] = 31,
+	[4] = 30,
+	[5] = 31,
+	[6] = 30,
+	[7] = 31,
+	[8] = 31,
+	[9] = 30,
+	[10] = 31,
+	[11] = 30,
+	[12] = 31
+}
 
 local ktMonths = {
 	["en"] = {
@@ -24,17 +39,17 @@ local ktMonths = {
 	},
 	["fr"] = {
 		[1] = {full = "Janvier", abbrv = "Jan."},
-		[2] = {full = "FÃ©vrier", abbrv = "FÃ©v."},
+		[2] = {full = "Février", abbrv = "Fév."},
 		[3] = {full = "Mars", abbrv = "Mar."},
 		[4] = {full = "Avril", abbrv = "Avr."},
 		[5] = {full = "Mai", abbrv = "Mai"},
 		[6] = {full = "Juin", abbrv = "Jun."},
 		[7] = {full = "Juillet", abbrv = "Jul."},
-		[8] = {full = "AoÃ»t", abbrv = "AoÃ»."},
+		[8] = {full = "Août", abbrv = "Aoû."},
 		[9] = {full = "Septembre", abbrv = "Sep."},
 		[10] = {full = "Octobre", abbrv = "Oct."},
 		[11] = {full = "Novembre", abbrv = "Nov."},
-		[12] = {full = "DÃ©cembre", abbrv = "DÃ©c."}
+		[12] = {full = "Décembre", abbrv = "Déc."}
 	},
 	["es"] = {
 		[1] = {full = "Enero", abbrv = "Ene."},
@@ -51,9 +66,9 @@ local ktMonths = {
 		[12] = {full = "Diciembre", abbrv = "Dic."}
 	},
 	["de"] = {
-		[1] = {full = "Januar", abbrv = "JÃ¤n."},
+		[1] = {full = "Januar", abbrv = "Jän."},
 		[2] = {full = "Februar", abbrv = "Feb."},
-		[3] = {full = "MÃ¤rz", abbrv = "MÃ¤rz"},
+		[3] = {full = "März", abbrv = "März"},
 		[4] = {full = "April", abbrv = "Apr."},
 		[5] = {full = "Mai", abbrv = "Mai"},
 		[6] = {full = "Juni", abbrv = "Juni"},
@@ -68,40 +83,40 @@ local ktMonths = {
 
 local ktDaysOfWeek = {
 	["en"] = {
-		[1] = {full = "Monday", abbrv = "Mon."},
-		[2] = {full = "Tuesday", abbrv = "Tue."},
-		[3] = {full = "Wednesday", abbrv = "Wed."},
-		[4] = {full = "Thursday", abbrv = "Thu."},
-		[5] = {full = "Friday", abbrv = "Fri."},
-		[6] = {full = "Saturday", abbrv = "Sat."},
-		[7] = {full = "Sunday", abbrv = "Sun."}
+		[1] = {full = "Sunday", abbrv = "Sun."},
+		[2] = {full = "Monday", abbrv = "Mon."},
+		[3] = {full = "Tuesday", abbrv = "Tue."},
+		[4] = {full = "Wednesday", abbrv = "Wed."},
+		[5] = {full = "Thursday", abbrv = "Thu."},
+		[6] = {full = "Friday", abbrv = "Fri."},
+		[7] = {full = "Saturday", abbrv = "Sat."}
 	},
 	["fr"] = {
-		[1] = {full = "Lundi", abbrv = "Lun."},
-		[2] = {full = "Mardi", abbrv = "Mar."},
-		[3] = {full = "Mercredi", abbrv = "Mer."},
-		[4] = {full = "Jeudi", abbrv = "Jeu."},
-		[5] = {full = "Vendredi", abbrv = "Ven."},
-		[6] = {full = "Samedi", abbrv = "Sam."},
-		[7] = {full = "Dimanche", abbrv = "Dim."}
+		[1] = {full = "Dimanche", abbrv = "Dim."},
+		[2] = {full = "Lundi", abbrv = "Lun."},
+		[3] = {full = "Mardi", abbrv = "Mar."},
+		[4] = {full = "Mercredi", abbrv = "Mer."},
+		[5] = {full = "Jeudi", abbrv = "Jeu."},
+		[6] = {full = "Vendredi", abbrv = "Ven."},
+		[7] = {full = "Samedi", abbrv = "Sam."}
 	},
 	["es"] = {
-		[1] = {full = "Lunes", abbrv = "Lu"},
-		[2] = {full = "Martes", abbrv = "Ma"},
-		[3] = {full = "MiÃ©rcoles", abbrv = "Mi"},
-		[4] = {full = "Jueves", abbrv = "Ju"},
-		[5] = {full = "Viernes", abbrv = "Vi"},
-		[6] = {full = "SÃ¡bado", abbrv = "Sa"},
-		[7] = {full = "Domingo", abbrv = "Do"}
+		[1] = {full = "Domingo", abbrv = "Do"},
+		[2] = {full = "Lunes", abbrv = "Lu"},
+		[3] = {full = "Martes", abbrv = "Ma"},
+		[4] = {full = "Miércoles", abbrv = "Mi"},
+		[5] = {full = "Jueves", abbrv = "Ju"},
+		[6] = {full = "Viernes", abbrv = "Vi"},
+		[7] = {full = "Sábado", abbrv = "Sa"}
 	},
 	["de"] = {
-		[1] = {full = "Montag", abbrv = "Mo"},
-		[2] = {full = "Dienstag", abbrv = "Di"},
-		[3] = {full = "Mittwoch", abbrv = "Mi"},
-		[4] = {full = "Donnerstag", abbrv = "Do"},
-		[5] = {full = "Freitag", abbrv = "Fr"},
-		[6] = {full = "Samstag", abbrv = "Sa"},
-		[7] = {full = "Sonntag", abbrv = "So"}
+		[1] = {full = "Sonntag", abbrv = "So"},
+		[2] = {full = "Montag", abbrv = "Mo"},
+		[3] = {full = "Dienstag", abbrv = "Di"},
+		[4] = {full = "Mittwoch", abbrv = "Mi"},
+		[5] = {full = "Donnerstag", abbrv = "Do"},
+		[6] = {full = "Freitag", abbrv = "Fr"},
+		[7] = {full = "Samstag", abbrv = "Sa"}
 	}
 }
 
@@ -126,6 +141,25 @@ end
 
 function Chronology:SetDefaultLanguage(lang)
 	Chronology.defaultLanguage = lang
+end
+
+function Chronology:GetDaysInMonth(month, year)
+	local d = ktMonthNumDays[month]
+  
+	-- check for leap year
+	if (month == 2) then
+		if (math.mod(year,4) == 0) then
+			if (math.mod(year,100) == 0)then                
+				if (math.mod(year,400) == 0) then                    
+					d = 29
+				end
+			else                
+				d = 29
+			end
+		end
+	end
+
+	return d  
 end
 
 function Chronology:GetMonthString(month, bAbbrv, lang)
