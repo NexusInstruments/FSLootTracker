@@ -1,3 +1,9 @@
+Version 2.0.0
+* Added statistic tracking for all major currencies (Prestige, Glory, Renown, Elder Gems, and Credits)
+* Updated Rolled gear tracking to include an indication for how the roll was won (Need / Greed)
+* Updated version number to 2.0.0
+* Added silent tracking of kills
+
 Version 1.9.1
 * Fixed projects provisioning files
 
