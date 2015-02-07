@@ -38,17 +38,17 @@ local karDataTypes = {
 }
 
 local karLootSources = {
-	["Normal"] = 0,
+	["Dropped"] = 0,
 	["Rolled"] = 1,
 	["Master"] = 2,
-	["Entered"] = 3
+	["Entered"] = -1
 }
 
 local karLootSourcesNames = {
-	[0] = "Normal",
+	[0] = "Dropped",
 	[1] = "Rolled",
 	[2] = "Master",
-	[3] = "Entered"
+	[-1] = "Entered"
 }
 
 local karItemQualityNames = {
@@ -156,7 +156,7 @@ local tDefaultOptions = {
 		[Item.CodeEnumItemQuality.Artifact] = false
 	},
 	sourceFilters = {
-		[karLootSources.Normal] = false,
+		[karLootSources.Dropped] = false,
 		[karLootSources.Rolled] = false,
 		[karLootSources.Master] = false,	
 	}
@@ -166,19 +166,14 @@ local strDefaultGuildInfoText =
 	"=== FSLootTracker ===\n\n" .. 
 	"_.,-*~'`^`'~*-,._\n\n" ..
 	"Developed By:\n" ..
-	"Chronosis--Caretaker-US\n" ..
-	"Copyright (c) 2014\n\n" ..
+	"Chrono Syz--Entity-US\n" ..
+	"Copyright (c) 2014,2015\n\n" ..
 	"_.,-*~'`^`'~*-,._\n\n" ..
 	"<FOR SCIENCE>\n" ..
 	"Dominion / PvE\n" .. 
-	"Caretaker-US\n\n" ..
+	"Entity-US\n\n" ..
 	"http://forscienceguild.org\n\n" ..
-	"_.,-*~'`^`'~*-,._\n\n" ..
-	"--- Alpha Testers ---\n" .. 
-	"Tasho--Caretaker-US\n" ..
-	"Steman--Caretaker-US\n" ..
-	"Yosara--Caretaker-US\n" ..
-	"Kopernikus--Caretaker-US\n"
+	"_.,-*~'`^`'~*-,._\n"
 
 function shallowcopy(orig)
     local orig_type = type(orig)
@@ -211,11 +206,48 @@ function FSLootTracker:new(o)
 	o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
 
 	o.tStats = {
-		totalMoney = 0,
-		perHourMoney = 0,
-		avgMoney = 0,
 		junkValue = 0,
-		largestDrop = 0
+		[Money.CodeEnumCurrencyType.Credits] = {
+			total = 0,
+			perHour = 0,
+			average = 0, 
+			largest = 0,
+			count = 0
+		},
+		[Money.CodeEnumCurrencyType.ElderGems] = {
+			total = 0,
+			perHour = 0,
+			average = 0, 
+			largest = 0,
+			count = 0
+		},
+		[Money.CodeEnumCurrencyType.Glory] = {
+			total = 0,
+			perHour = 0,
+			average = 0, 
+			largest = 0,
+			count = 0
+		},
+		[Money.CodeEnumCurrencyType.Prestige] = {
+			total = 0,
+			perHour = 0,
+			average = 0, 
+			largest = 0,
+			count = 0
+		},
+		[Money.CodeEnumCurrencyType.Renown] = {
+			total = 0,
+			perHour = 0,
+			average = 0, 
+			largest = 0,
+			count = 0
+		},
+		[Money.CodeEnumCurrencyType.CraftingVouchers] = {
+			total = 0,
+			perHour = 0,
+			average = 0, 
+			largest = 0
+		}
 	}
 
 	o.tState = {
@@ -229,7 +261,8 @@ function FSLootTracker:new(o)
 		ZoneCache = {},
 		LooterCache = {},
 		ItemCache = {},
-		KillCache = {}
+		KillCache = {},
+		EquipmentCache = {}
 	}
 	
 	o.tQueuedEntryData = {}		-- keep track of all recently looted items to process
@@ -273,6 +306,7 @@ function FSLootTracker:CacheItem(itemInstance)
 	if itemInstance:GetSellPrice() ~= nil then
 		v = itemInstance:GetSellPrice():GetAmount()
 	end
+
 	local itemID = itemInstance:GetItemId()
 	if not self.tCache.ItemCache:HasKey(itemID) then
 		local item = {
@@ -308,7 +342,7 @@ end
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker GetLootItemEventData
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource, itemLooter)
+function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource, itemLooter, itemNeed)
 	local iQuality = itemInstance:GetItemQuality() or Item.CodeEnumItemQuality.Average
 
 	local iValue = 0
@@ -326,6 +360,7 @@ function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource,
 		quality = iQuality,
 		source =  self.tCache.SourceCache:GetAddValue(self.tState.lastSource),
 		sourceType = karLootSources[itemSource],
+		rollType = itemNeed,
 		timeAdded = GameLib.GetGameTime(),
 		timeReported = GameLib.GetLocalTime(),
 		zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName),
@@ -341,7 +376,7 @@ function FSLootTracker:OnLootedItem(itemInstance, itemCount)
 	--queue recently added items
 	self:Debug("Item Looted: " .. itemInstance:GetName())
 	self:CacheItem(itemInstance)
-	table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemInstance, itemCount, "Normal", strPlayerName))
+	table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemInstance, itemCount, "Dropped", strPlayerName, nil))
 	self.fLastTimeAdded = GameLib.GetGameTime()	
 end
 
@@ -352,7 +387,7 @@ function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
 	self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
 	if strWinner ~= GameLib.GetPlayerUnit():GetName() then
 		self:CacheItem(itemLooted)
-		table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemLooted, 1, "Rolled", strWinner))
+		table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemLooted, 1, "Rolled", strWinner, bNeed))
 		self.fLastTimeAdded = GameLib.GetGameTime()	
 	end
 end
@@ -366,7 +401,7 @@ function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
 	-- Since this will be caught by the onLootItem event automatically
 	if strLooter ~= GameLib.GetPlayerUnit():GetName() then
 		self:CacheItem(itemInstance)
-		table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemInstance, 1, "Master", strLooter))
+		table.insert(self.tQueuedEntryData, self:GetLootItemEventData(itemInstance, 1, "Master", strLooter, nil))
 		self.fLastTimeAdded = GameLib.GetGameTime()	
 	end
 end
@@ -436,9 +471,7 @@ function FSLootTracker:AddQueuedItem()
 		self:Debug("Money was added")
 		-- Add to total earn if actual money
 		table.insert(self.tMoneys, tQueuedData)
-		if tQueuedData.moneyType == Money.CodeEnumCurrencyType.Credits then
-			self:UpdateStats(tQueuedData.moneyAmount)
-		end		
+		self:UpdateStats(tQueuedData)
 	else
 		self:Debug("Unknown type")	
 	end
@@ -576,12 +609,53 @@ function FSLootTracker:OnDocLoaded()
 		self.wndItemList = self.wndMain:FindChild("ItemList")
 		self.wndMoneyWindow = self.wndMain:FindChild("MoneyWindow")
 		self.wndMoneyList = self.wndMoneyWindow:FindChild("MoneyList")
-		self.wndTotalCash = self.wndMoneyWindow:FindChild("TotalMoney"):FindChild("CashDisplay")
-		self.wndPerHourCash = self.wndMoneyWindow:FindChild("MoneyPerHour"):FindChild("CashDisplay")
-		self.wndAvgCash = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("CashDisplay")
 		self.wndJunkCash = self.wndMoneyWindow:FindChild("JunkValue"):FindChild("CashDisplay")	
-		self.wndMostCash = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("CashDisplay")
 
+		self.wndTotalCash = self.wndMoneyWindow:FindChild("TotalMoney"):FindChild("CashDisplay")
+		self.wndTotalCash:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
+		self.wndPerHourCash = self.wndMoneyWindow:FindChild("MoneyPerHour"):FindChild("CashDisplay")
+		self.wndPerHourCash:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
+		self.wndAvgCash = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("CashDisplay")
+		self.wndAvgCash:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
+		self.wndMostCash = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("CashDisplay")
+		self.wndMostCash:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
+				
+		self.wndTotalEG = self.wndMoneyWindow:FindChild("TotalMoney"):FindChild("EGDisplay")
+		self.wndTotalEG:SetMoneySystem(Money.CodeEnumCurrencyType.ElderGems)
+		self.wndPerHourEG = self.wndMoneyWindow:FindChild("MoneyPerHour"):FindChild("EGDisplay")
+		self.wndPerHourEG:SetMoneySystem(Money.CodeEnumCurrencyType.ElderGems)
+		self.wndAvgEG = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("EGDisplay")
+		self.wndAvgEG:SetMoneySystem(Money.CodeEnumCurrencyType.ElderGems)
+		self.wndMostEG = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("EGDisplay")
+		self.wndMostEG:SetMoneySystem(Money.CodeEnumCurrencyType.ElderGems)
+
+		self.wndTotalReknown = self.wndMoneyWindow:FindChild("TotalMoney"):FindChild("ReknownDisplay")
+		self.wndTotalReknown:SetMoneySystem(Money.CodeEnumCurrencyType.Renown)
+		self.wndPerHourReknown = self.wndMoneyWindow:FindChild("MoneyPerHour"):FindChild("ReknownDisplay")
+		self.wndPerHourReknown:SetMoneySystem(Money.CodeEnumCurrencyType.Renown)
+		self.wndAvgReknown = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("ReknownDisplay")
+		self.wndAvgReknown:SetMoneySystem(Money.CodeEnumCurrencyType.Renown)
+		self.wndMostReknown = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("ReknownDisplay")
+		self.wndMostReknown:SetMoneySystem(Money.CodeEnumCurrencyType.Renown)
+
+		self.wndTotalGlory = self.wndMoneyWindow:FindChild("TotalMoney"):FindChild("GloryDisplay")
+		self.wndTotalGlory:SetMoneySystem(Money.CodeEnumCurrencyType.Glory)
+		self.wndPerHourGlory = self.wndMoneyWindow:FindChild("MoneyPerHour"):FindChild("GloryDisplay")
+		self.wndPerHourGlory:SetMoneySystem(Money.CodeEnumCurrencyType.Glory)
+		self.wndAvgGlory = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("GloryDisplay")
+		self.wndAvgGlory:SetMoneySystem(Money.CodeEnumCurrencyType.Glory)
+		self.wndMostGlory = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("GloryDisplay")
+		self.wndMostGlory:SetMoneySystem(Money.CodeEnumCurrencyType.Glory)
+
+		self.wndTotalPrestige = self.wndMoneyWindow:FindChild("TotalMoney"):FindChild("PSDisplay")
+		self.wndTotalPrestige:SetMoneySystem(Money.CodeEnumCurrencyType.Prestige)
+		self.wndPerHourPrestige = self.wndMoneyWindow:FindChild("MoneyPerHour"):FindChild("PSDisplay")
+		self.wndPerHourPrestige:SetMoneySystem(Money.CodeEnumCurrencyType.Prestige)
+		self.wndAvgPrestige = self.wndMoneyWindow:FindChild("AvgMoney"):FindChild("PSDisplay")
+		self.wndAvgPrestige:SetMoneySystem(Money.CodeEnumCurrencyType.Prestige)
+		self.wndMostPrestige = self.wndMoneyWindow:FindChild("LargestLoot"):FindChild("PSDisplay")
+		self.wndMostPrestige:SetMoneySystem(Money.CodeEnumCurrencyType.Prestige)
+				
 		self.editConfigCosts = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureCosts"):FindChild("EditBox")
 		self.editConfigTypes = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTypes"):FindChild("QualityBtns")		
 		self.editConfigTimeFormat = self.wndLootOpts:FindChild("OptionsContainerFrame"):FindChild("OptionsConfigureTimeFormat")
@@ -890,42 +964,68 @@ end
 -- MoneyList Functions
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:UpdateStats(addMoney)
-	self:Debug("Adding Money: " .. addMoney) 
+	local timediff = 0
+	if self.fFirstLoot ~= nil then
+		timediff = os.difftime(self.fLastLoot, self.fFirstLoot)
+	end
+
+	--self:Debug("Adding Money: " .. addMoney.moneyAmount) 
+
 	-- Calculate Total Money
-	self.tStats.totalMoney = self.tStats.totalMoney + addMoney
+	self.tStats[addMoney.moneyType].total = self.tStats[addMoney.moneyType].total + addMoney.moneyAmount
+	self.tStats[addMoney.moneyType].count = self.tStats[addMoney.moneyType].count + 1
 	
 	-- Calculate Money Per Hour
 	if self.fFirstLoot ~= nil then
-		local timediff = os.difftime(self.fLastLoot, self.fFirstLoot)
 		if timediff > 0 then
-			self.tStats.perHourMoney = (self.tStats.totalMoney * 3600) / timediff 
+			self.tStats[addMoney.moneyType].perHour = (self.tStats[addMoney.moneyType].total * 3600) / timediff 
 		else
-			self.tStats.perHourMoney = addMoney
+			self.tStats[addMoney.moneyType].perHour = addMoney.moneyAmount
 		end
 	end
 	
 	-- Calculate Average Money
-	local nMoneyLoots = table.getn(self.tMoneys)
-	if nMoneyLoots > 0 then
-		self.tStats.avgMoney = self.tStats.totalMoney / nMoneyLoots
+	if self.tStats[addMoney.moneyType].count > 0 then
+		self.tStats[addMoney.moneyType].average = self.tStats[addMoney.moneyType].total / self.tStats[addMoney.moneyType].count
 	else
-		self.tStats.avgMoney = addMoney
+		self.tStats[addMoney.moneyType].average = addMoney.moneyAmount
 	end
 	
 	-- Calculate Largest Loot
-	if addMoney > self.tStats.largestDrop then
-		self.tStats.largestDrop = addMoney
+	if addMoney.moneyAmount > self.tStats[addMoney.moneyType].largest then
+		self.tStats[addMoney.moneyType].largest = addMoney.moneyAmount
 	end
 
 	self:RefreshStats()
 end
 
 function FSLootTracker:RefreshStats()
-	self.wndTotalCash:SetAmount(self.tStats.totalMoney)
-	self.wndPerHourCash:SetAmount(self.tStats.perHourMoney)
-	self.wndAvgCash:SetAmount(self.tStats.avgMoney)
+	self.wndTotalCash:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Credits].total)
+	self.wndPerHourCash:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Credits].perHour)
+	self.wndAvgCash:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Credits].average)
+	self.wndMostCash:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Credits].largest)
+
+	self.wndTotalEG:SetAmount(self.tStats[Money.CodeEnumCurrencyType.ElderGems].total)
+	self.wndPerHourEG:SetAmount(self.tStats[Money.CodeEnumCurrencyType.ElderGems].perHour)
+	self.wndAvgEG:SetAmount(self.tStats[Money.CodeEnumCurrencyType.ElderGems].average)
+	self.wndMostEG:SetAmount(self.tStats[Money.CodeEnumCurrencyType.ElderGems].largest)		
+
+	self.wndTotalGlory:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Glory].total)
+	self.wndPerHourGlory:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Glory].perHour)
+	self.wndAvgGlory:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Glory].average)
+	self.wndMostGlory:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Glory].largest)
+
+	self.wndTotalReknown:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Renown].total)
+	self.wndPerHourReknown:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Renown].perHour)
+	self.wndAvgReknown:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Renown].average)
+	self.wndMostReknown:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Renown].largest)	
+
+	self.wndTotalPrestige:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Prestige].total)
+	self.wndPerHourPrestige:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Prestige].perHour)
+	self.wndAvgPrestige:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Prestige].average)
+	self.wndMostPrestige:SetAmount(self.tStats[Money.CodeEnumCurrencyType.Prestige].largest)	
+				
 	self.wndJunkCash:SetAmount(self.tStats.junkValue)
-	self.wndMostCash:SetAmount(self.tStats.largestDrop)
 end
 
 -- clear the item list
@@ -955,8 +1055,17 @@ function FSLootTracker:ClearLists()
 	self:DestroyMoneyList()
 	self:ClearCache()
 	for key,val in pairs(self.tStats) do
-		self.tStats[key] = 0
-	end
+		if key == "junkValue" then
+			self.tStats[key] = 0		
+		else
+			self.tStats[key] = {
+				total = 0,
+				perHour = 0,
+				average = 0,
+				largest = 0
+			}
+		end
+			end
 	self:RebuildLists()
 	self:RefreshStats()
 end
@@ -1033,7 +1142,15 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
 	-- give it a piece of data to refer to 
 	local wndItemSourceType = wnd:FindChild("ItemSourceType")
 	if wndItemSourceType then -- make sure the text wnd exist
-		wndItemSourceType:SetText(karLootSourcesNames[item.sourceType])
+		local strNeed = ""
+		if item.rollType ~= nil then
+			if item.rollType == true then
+				strNeed = " (Need)"
+			else
+				strNeed = " (Greed)"
+			end
+		end
+		wndItemSourceType:SetText(karLootSourcesNames[item.sourceType] .. strNeed)
 	end
 
 	-- give it a piece of data to refer to 
