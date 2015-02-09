@@ -1,4 +1,4 @@
-------------------------------------------------------------------------------------------------
+﻿------------------------------------------------------------------------------------------------
 --	FSLootTracker ver. @project-version@
 --	by Chronosis--Caretaker-US
 --	Build @project-hash@
@@ -31,24 +31,152 @@ local kcrNormalText = ApolloColor.new("UI_BtnTextHoloNormal")
 local kfTimeBetweenItems = 2 -- Previously .3			-- delay between items; also determines clearing time (seconds)
 local strPlayerName = ""								-- This shouldn't be changing
 
-local karDataTypes = {
+local karDataTypes = 
+{
 	clear = 0,
 	item = 1,
 	money = 2
 }
 
-local karLootSources = {
+local karLootSources = 
+{
 	["Dropped"] = 0,
 	["Rolled"] = 1,
 	["Master"] = 2,
 	["Entered"] = -1
 }
 
-local karLootSourcesNames = {
+local karLootSourcesNames = 
+{
 	[0] = "Dropped",
 	[1] = "Rolled",
 	[2] = "Master",
 	[-1] = "Entered"
+}
+
+local karCurrentSorting = 
+{
+	Column = 4,
+	Order = 0
+}
+
+local karCurrentSortDisplay = 
+{
+	[1] = 0,
+	[2] = 0,
+	[3] = 0,
+	[4] = 0
+}
+
+local karSortOrderLabels = {
+	[1] = 
+	{
+		[0] = {
+			Label = "Name ▼",
+			Field = "",
+			Direction = 0,
+			UseItemData = false
+		},
+		[1] = {
+			Label = "Name ▲",
+			Field = "",
+			Direction = 1,
+			UseItemData = false
+		}
+		[2] = { 
+			Label = "Type ▼", 
+			Field = "",
+			Direction = 0,
+			UseItemData = false
+		}
+		[3] = { 
+			Label = "Type ▲", 			
+			Field = "",
+			Direction = 1,
+			UseItemData = false
+		}
+	},
+	[2] = 
+	{
+		[0] = {
+			Label = "Source ▼",
+			Field = "",
+			Direction = 0,
+			UseItemData = false
+		},
+		[1] = {
+			Label = "Source ▲",
+			Field = "",
+			Direction = 1,
+			UseItemData = false
+		}
+		[2] = { 
+			Label = "Location ▼", 
+			Field = "",
+			Direction = 0,
+			UseItemData = false
+		}
+		[3] = { 
+			Label = "Location ▲", 			
+			Field = "",
+			Direction = 1,
+			UseItemData = false
+		}	
+	},
+	[3] = 
+	{
+		[0] = {
+			Label = "Player ▼",
+			Field = "",
+			Direction = 0,
+			UseItemData = false
+		},
+		[1] = {
+			Label = "Player ▲",
+			Field = "",
+			Direction = 1,
+			UseItemData = false
+		}
+		[2] = { 
+			Label = "Loot ▼", 
+			Field = "",
+			Direction = 0,
+			UseItemData = false
+		}
+		[3] = { 
+			Label = "Loot ▲", 			
+			Field = "",
+			Direction = 1,
+			UseItemData = false
+		}	
+	},
+	[4] = 
+	{
+		[0] = {
+			Label = "Time ▼",
+			Field = "timeReported",
+			Direction = 0,
+			UseItemData = false
+		},
+		[1] = {
+			Label = "Time ▲",
+			Field = "timeReported",
+			Direction = 1,
+			UseItemData = false
+		}
+		[2] = { 
+			Label = "Value ▼", 
+			Field = "ivalue",
+			Direction = 0,
+			UseItemData = false
+		}
+		[3] = { 
+			Label = "Value ▲", 			
+			Field = "ivalue",
+			Direction = 1,
+			UseItemData = false
+		}	
+	}
 }
 
 local karItemQualityNames = {
@@ -277,6 +405,12 @@ function FSLootTracker:new(o)
 	o.wndSelectedListItem = nil	-- keep track of which list item is currently selected
 	o.wndEditWindow = nil
 	o.wndInfoWindow = nil
+	
+	o.sortSettings = {
+		Field = "timeReported",
+		Direction = 0,
+		UseItemData = false
+	}
 
 	return o
 end
@@ -889,6 +1023,9 @@ end
 
 function FSLootTracker:OnContextClosed( wndHandler, wndControl )
 	FSLootTrackerInst.wndContextFlyout:Show(false)
+end
+
+function FSLootTracker:SortItemList( wndHandler, wndControl, eMouseButton )
 end
 
 -----------------------------------------------------------------------------------------------
