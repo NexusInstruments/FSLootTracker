@@ -583,13 +583,15 @@ function FSLootTracker:OnCombatLogDamage(tEventArgs)
   -- something has been killed
   if tEventArgs.bTargetKilled then
     local unit = tEventArgs.unitTarget
-    if not unit:IsACharacter() then
-      -- set loot target and time stamp
-      local strUnitName = unit:GetName()
-      self.tCache.KillCache:GetAddValue(strUnitName)
-      self.tState.lastSource = strUnitName
-      -- Start Loot Timer to reset
-      Apollo.StartTimer("KillSourceTimerUpdate")
+    if unit then
+      if not unit:IsACharacter() then
+        -- set loot target and time stamp
+        local strUnitName = unit:GetName()
+        self.tCache.KillCache:GetAddValue(strUnitName)
+        self.tState.lastSource = strUnitName
+        -- Start Loot Timer to reset
+        Apollo.StartTimer("KillSourceTimerUpdate")
+      end
     end
   end
 end
@@ -939,7 +941,7 @@ function FSLootTracker:RebuildLists()
   self:RebuildExportList()
   self:RefreshListDisplays()
   self:RefreshStats()
-  
+
   -- Restore Scroll Position
   self.wndItemList:SetVScrollPos(itemVScrollPos)
   self.wndMoneyList:SetVScrollPos(moneyVScrollPos)
@@ -1181,7 +1183,7 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
       wndItemIcon:SetData(idx)
     end
     wndItemBorder:SetSprite(karItemQuality[iQuality].SquareSprite)
-    wndItemBorder:SetText("x" .. item.count .. "�")
+    wndItemBorder:SetText("x" .. item.count ) --.. "�")
   end
 
   wnd:SetData(idx)
