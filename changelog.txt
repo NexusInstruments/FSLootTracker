@@ -1,3 +1,8 @@
+Version 2.1.0
+* Added TypeIDs to display
+* Added OneVersion Support
+* Updated API Version number to 10
+
 Version 2.0.0
 * Added statistic tracking for all major currencies (Prestige, Glory, Renown, Elder Gems, and Credits)
 * Updated Rolled gear tracking to include an indication for how the roll was won (Need / Greed)
