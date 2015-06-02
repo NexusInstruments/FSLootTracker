@@ -15,6 +15,8 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
+local Major, Minor, Patch, Suffix = 2, 0, 0, 0
+local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "2.0"
 
 local FSLootTracker = {}
@@ -504,6 +506,9 @@ function FSLootTracker:OnInterfaceMenuListHasLoaded()
   strPlayerName = GameLib.GetPlayerUnit():GetName()
   self:RebuildLists()
   self:RefreshStats()
+
+  -- Report Self
+  Event_FireGenericEvent("OneVersion_ReportAddonInfo", "FSLootTracker", Major, Minor, Patch, Suffix, false)
 end
 
 -----------------------------------------------------------------------------------------------
