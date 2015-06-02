@@ -15,7 +15,7 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
-local Major, Minor, Patch, Suffix = 2, 0, 0, 0
+local Major, Minor, Patch, Suffix = 2, 1, 0, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "2.0"
 
