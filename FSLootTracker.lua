@@ -996,31 +996,40 @@ function FSLootTracker:UpdateStats(addMoney)
   end
 
   --self:Debug("Adding Money: " .. addMoney.moneyAmount)
-
+  local m = self.tStats[addMoney.moneyType]
+  if m == nil then
+    m = {
+      total = 0,
+      perHour = 0,
+      average = 0,
+      largest = 0
+    }
+  end
   -- Calculate Total Money
-  self.tStats[addMoney.moneyType].total = self.tStats[addMoney.moneyType].total + addMoney.moneyAmount
-  self.tStats[addMoney.moneyType].count = self.tStats[addMoney.moneyType].count + 1
+  m.total = m.total + addMoney.moneyAmount
+  m.count = m.count + 1
 
   -- Calculate Money Per Hour
   if self.fFirstLoot ~= nil then
     if timediff > 0 then
-      self.tStats[addMoney.moneyType].perHour = (self.tStats[addMoney.moneyType].total * 3600) / timediff
+      m.perHour = (m.total * 3600) / timediff
     else
-      self.tStats[addMoney.moneyType].perHour = addMoney.moneyAmount
+      m.perHour = addMoney.moneyAmount
     end
   end
 
   -- Calculate Average Money
-  if self.tStats[addMoney.moneyType].count > 0 then
-    self.tStats[addMoney.moneyType].average = self.tStats[addMoney.moneyType].total / self.tStats[addMoney.moneyType].count
+  if m.count > 0 then
+    m.average = m.total / m.count
   else
-    self.tStats[addMoney.moneyType].average = addMoney.moneyAmount
+    m.average = addMoney.moneyAmount
   end
 
   -- Calculate Largest Loot
-  if addMoney.moneyAmount > self.tStats[addMoney.moneyType].largest then
-    self.tStats[addMoney.moneyType].largest = addMoney.moneyAmount
+  if addMoney.moneyAmount > m.largest then
+    m.largest = addMoney.moneyAmount
   end
+  --self.tStats[addMoney.moneyType] = m
 
   self:RefreshStats()
 end
