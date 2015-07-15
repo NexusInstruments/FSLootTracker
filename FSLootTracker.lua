@@ -997,12 +997,14 @@ function FSLootTracker:UpdateStats(addMoney)
 
   --self:Debug("Adding Money: " .. addMoney.moneyAmount)
   local m = self.tStats[addMoney.moneyType]
+
   if m == nil then
     m = {
       total = 0,
       perHour = 0,
       average = 0,
-      largest = 0
+      largest = 0,
+      count = 0
     }
   end
   -- Calculate Total Money
