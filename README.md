@@ -20,7 +20,7 @@ JSONDecode
 **Example**
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
-  
+
   local jsonStr = "[{\"a\":1,\"b\":\"string\",\"c\":{\"a\":1,\"b\":\"string\"},\"d\":null}]"
 
   local tNewTable = self:JSONDecode(jsonStr)
@@ -29,8 +29,8 @@ JSONDecode
 ```
 Value of tNewTable:
 {
-    a = 1, 
-    b = "string", 
+    a = 1,
+    b = "string",
     c = { a = 1, b = "string" }
     d = nil
 }
@@ -41,14 +41,14 @@ JSONEncode
 **Example**
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
-   
+
   local tNewTable = {
-    a = 1, 
-    b = "string", 
+    a = 1,
+    b = "string",
     c = { a = 1, b = "string" }
     d = nil
   }
-   
+
   local exportStr = self:JSONEncode(tNewTable)
 ```
 **Results**
@@ -61,14 +61,14 @@ JSONEncodePretty
 **Example**
 ```lua
   Apollo.GetPackage("Json:Utils-1.0").tPackage:Embed(self)
-   
+
   local tNewTable = {
-    a = 1, 
-    b = "string", 
+    a = 1,
+    b = "string",
     c = { a = 1, b = "string" }
     d = nil
   }
-   
+
   local exportStr = self:JSONEncodePretty(tNewTable)
 ```
 **Results**
@@ -76,23 +76,25 @@ JSONEncodePretty
 [
   {
     "a": 1,
-	"b": "string",
-	"c": {
-	  "a": 1,
-	  "b": "string"
-	},
-	"d": null
+  "b": "string",
+  "c": {
+    "a": 1,
+    "b": "string"
+  },
+  "d": null
   }
 ]
 ```
 
 ----
-
 Portions of this library's code attributed to:
 ```
  JSON-Lua Copyright 2010-2013 Jeffrey Friedl
  http://regex.info/blog/
  Latest version: http://regex.info/blog/lua/json
- Released under a Creative Commons CC-BY "Attribution" License: 
+ Released under a Creative Commons CC-BY "Attribution" License:
  http://creativecommons.org/licenses/by/3.0/deed.en_US
 ```
+
+**Licensed under MIT License**
+Copyright (c) 2015 NexusInstruments
