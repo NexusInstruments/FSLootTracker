@@ -1007,6 +1007,11 @@ function FSLootTracker:UpdateStats(addMoney)
       count = 0
     }
   end
+
+  if not m.count then
+    m.count = 0
+  end
+
   -- Calculate Total Money
   m.total = m.total + addMoney.moneyAmount
   m.count = m.count + 1
