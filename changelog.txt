@@ -1,3 +1,8 @@
+Version 2.1.3
+* Fixed bug with money list
+* Fixed bug with unknown zones
+* Fixed bug with settings persistence
+
 Version 2.1.0
 * Added TypeIDs to display
 * Added OneVersion Support
