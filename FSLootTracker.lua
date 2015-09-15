@@ -15,7 +15,7 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
-local Major, Minor, Patch, Suffix = 2, 1, 0, 0
+local Major, Minor, Patch, Suffix = 2, 1, 3, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "2.0"
 
@@ -208,7 +208,7 @@ function FSLootTracker:new(o)
   o.fLastTimeAdded = 0		-- last time the stack queue was updates
   o.curMoneyCount = 0			-- current count of money items logged
 
-  o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
+  o.tConfig = deepcopy(tDefaultOptions)  -- defaults
 
   o.tStats = {
     junkValue = 0,
@@ -360,6 +360,14 @@ function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource,
     iValue = itemInstance:GetSellPrice():GetAmount()
   end
 
+  local curZone = GameLib.GetCurrentZoneMap()
+  local zoneName = ""
+  if curZone then
+    zoneName = curZone.strName
+  else
+    zoneName = "Unknown"
+  end
+
   local tNewEntry =
   {
     recordType = karDataTypes.item,
@@ -373,7 +381,7 @@ function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource,
     rollType = itemNeed,
     timeAdded = GameLib.GetGameTime(),
     timeReported = GameLib.GetLocalTime(),
-    zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName),
+    zone = self.tCache.ZoneCache:GetAddValue(zoneName),
     value = iValue
   }
   return tNewEntry
@@ -996,31 +1004,47 @@ function FSLootTracker:UpdateStats(addMoney)
   end
 
   --self:Debug("Adding Money: " .. addMoney.moneyAmount)
+  local m = self.tStats[addMoney.moneyType]
+
+  if m == nil then
+    m = {
+      total = 0,
+      perHour = 0,
+      average = 0,
+      largest = 0,
+      count = 0
+    }
+  end
+
+  if not m.count then
+    m.count = 0
+  end
 
   -- Calculate Total Money
-  self.tStats[addMoney.moneyType].total = self.tStats[addMoney.moneyType].total + addMoney.moneyAmount
-  self.tStats[addMoney.moneyType].count = self.tStats[addMoney.moneyType].count + 1
+  m.total = m.total + addMoney.moneyAmount
+  m.count = m.count + 1
 
   -- Calculate Money Per Hour
   if self.fFirstLoot ~= nil then
     if timediff > 0 then
-      self.tStats[addMoney.moneyType].perHour = (self.tStats[addMoney.moneyType].total * 3600) / timediff
+      m.perHour = (m.total * 3600) / timediff
     else
-      self.tStats[addMoney.moneyType].perHour = addMoney.moneyAmount
+      m.perHour = addMoney.moneyAmount
     end
   end
 
   -- Calculate Average Money
-  if self.tStats[addMoney.moneyType].count > 0 then
-    self.tStats[addMoney.moneyType].average = self.tStats[addMoney.moneyType].total / self.tStats[addMoney.moneyType].count
+  if m.count > 0 then
+    m.average = m.total / m.count
   else
-    self.tStats[addMoney.moneyType].average = addMoney.moneyAmount
+    m.average = addMoney.moneyAmount
   end
 
   -- Calculate Largest Loot
-  if addMoney.moneyAmount > self.tStats[addMoney.moneyType].largest then
-    self.tStats[addMoney.moneyType].largest = addMoney.moneyAmount
+  if addMoney.moneyAmount > m.largest then
+    m.largest = addMoney.moneyAmount
   end
+  --self.tStats[addMoney.moneyType] = m
 
   self:RefreshStats()
 end
@@ -1471,7 +1495,7 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
   -- Restore Configuration
   if tSavedData == FSDataVersion then
     if tSavedData.tConfig then
-      self.tConfig = shallowcopy(tSavedData.tConfig)
+      self.tConfig = deepcopy(tSavedData.tConfig)
       -- Fill in any missing values from the default options
       -- This Protects us from configuration additions in the future
       for key, value in pairs(tDefaultOptions) do
@@ -1480,7 +1504,7 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
         end
       end
     else
-      self.tConfig = shallowcopy(tDefaultOptions)
+      self.tConfig = deepcopy(tDefaultOptions)
     end
 
     if self.tConfig.persistSession == true then
@@ -1495,20 +1519,20 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 
       -- Load the Item Data
       if tSavedData.tItems then
-        self.tItems = shallowcopy(tSavedData.tItems)
+        self.tItems = deepcopy(tSavedData.tItems)
       else
         self.tItems = {}
       end
 
       -- Load the Money Data
       if tSavedData.tMoney then
-        self.tMoneys = shallowcopy(tSavedData.tMoneys)
+        self.tMoneys = deepcopy(tSavedData.tMoneys)
       else
         self.tMoneys = {}
       end
     end
   else
-    self.tConfig = shallowcopy(tDefaultOptions)
+    self.tConfig = deepcopy(tDefaultOptions)
   end
 end
 
