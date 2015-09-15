@@ -360,6 +360,14 @@ function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource,
     iValue = itemInstance:GetSellPrice():GetAmount()
   end
 
+  local curZone = GameLib.GetCurrentZoneMap()
+  local zoneName = ""
+  if curZone then
+    zoneName = curZone.strName
+  else
+    zoneName = "Unknown"
+  end
+
   local tNewEntry =
   {
     recordType = karDataTypes.item,
@@ -373,7 +381,7 @@ function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource,
     rollType = itemNeed,
     timeAdded = GameLib.GetGameTime(),
     timeReported = GameLib.GetLocalTime(),
-    zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName),
+    zone = self.tCache.ZoneCache:GetAddValue(zoneName),
     value = iValue
   }
   return tNewEntry
