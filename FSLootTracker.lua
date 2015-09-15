@@ -208,7 +208,7 @@ function FSLootTracker:new(o)
   o.fLastTimeAdded = 0		-- last time the stack queue was updates
   o.curMoneyCount = 0			-- current count of money items logged
 
-  o.tConfig = shallowcopy(tDefaultOptions)  -- defaults
+  o.tConfig = deepcopy(tDefaultOptions)  -- defaults
 
   o.tStats = {
     junkValue = 0,
@@ -1482,7 +1482,7 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
   -- Restore Configuration
   if tSavedData == FSDataVersion then
     if tSavedData.tConfig then
-      self.tConfig = shallowcopy(tSavedData.tConfig)
+      self.tConfig = deepcopy(tSavedData.tConfig)
       -- Fill in any missing values from the default options
       -- This Protects us from configuration additions in the future
       for key, value in pairs(tDefaultOptions) do
@@ -1491,7 +1491,7 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
         end
       end
     else
-      self.tConfig = shallowcopy(tDefaultOptions)
+      self.tConfig = deepcopy(tDefaultOptions)
     end
 
     if self.tConfig.persistSession == true then
@@ -1506,20 +1506,20 @@ function FSLootTracker:OnRestore(eLevel, tSavedData)
 
       -- Load the Item Data
       if tSavedData.tItems then
-        self.tItems = shallowcopy(tSavedData.tItems)
+        self.tItems = deepcopy(tSavedData.tItems)
       else
         self.tItems = {}
       end
 
       -- Load the Money Data
       if tSavedData.tMoney then
-        self.tMoneys = shallowcopy(tSavedData.tMoneys)
+        self.tMoneys = deepcopy(tSavedData.tMoneys)
       else
         self.tMoneys = {}
       end
     end
   else
-    self.tConfig = shallowcopy(tDefaultOptions)
+    self.tConfig = deepcopy(tDefaultOptions)
   end
 end
 
