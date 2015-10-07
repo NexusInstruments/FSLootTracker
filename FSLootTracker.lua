@@ -15,7 +15,7 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
-local Major, Minor, Patch, Suffix = 2, 1, 3, 0
+local Major, Minor, Patch, Suffix = 2, 2, 0, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "2.0"
 
@@ -542,8 +542,12 @@ function FSLootTracker:OnLoad()
 
   -- initialize loot event
   Apollo.RegisterEventHandler("Generic_ToggleLoot", "OnLootTrackerOn", self)
-  Apollo.RegisterEventHandler("LootedItem", "OnLootedItem", self)
-  Apollo.RegisterEventHandler("LootedMoney", "OnLootedMoney", self)
+  --Apollo.RegisterEventHandler("LootedItem", "OnLootedItem", self)
+  --Apollo.RegisterEventHandler("LootedMoney", "OnLootedMoney", self)
+  Apollo.RegisterEventHandler("ChannelUpdate_Loot",	"OnChannelUpdate_Loot", self)
+  --Apollo.RegisterEventHandler("ItemAdded", "OnLootedItem", self)
+  --Apollo.RegisterEventHandler("LootStackItemSentToTradeskillBag", 		"OnLootstackItemSentToTradeskillBag", self)
+
   Apollo.RegisterEventHandler("LootAssigned", "OnLootAssigned", self)
   Apollo.RegisterEventHandler("LootRollWon", "OnLootRollWon", self)
   Apollo.RegisterEventHandler("CombatLogLoot", "OnCombatLogLoot", self)
@@ -1605,6 +1609,13 @@ end
 function FSLootTracker:OnAddLookupItem( wndHandler, wndControl, eMouseButton )
 end
 
+function FSLootTracker:OnChannelUpdate_Loot(eType, tEventArgs)
+  if eType == GameLib.ChannelUpdateLootType.Currency and tEventArgs.monNew then
+    self:OnLootedMoney(tEventArgs.monNew)
+  elseif eType == GameLib.ChannelUpdateLootType.Item and tEventArgs.itemNew then
+    self:OnLootedItem(tEventArgs.itemNew, tEventArgs.nCount)
+  end
+end
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Instance
 -----------------------------------------------------------------------------------------------
