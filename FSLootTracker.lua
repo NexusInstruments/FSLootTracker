@@ -542,8 +542,12 @@ function FSLootTracker:OnLoad()
 
   -- initialize loot event
   Apollo.RegisterEventHandler("Generic_ToggleLoot", "OnLootTrackerOn", self)
-  Apollo.RegisterEventHandler("LootedItem", "OnLootedItem", self)
-  Apollo.RegisterEventHandler("LootedMoney", "OnLootedMoney", self)
+  --Apollo.RegisterEventHandler("LootedItem", "OnLootedItem", self)
+  --Apollo.RegisterEventHandler("LootedMoney", "OnLootedMoney", self)
+  Apollo.RegisterEventHandler("ChannelUpdate_Loot",	"OnChannelUpdate_Loot", self)
+  --Apollo.RegisterEventHandler("ItemAdded", "OnLootedItem", self)
+  --Apollo.RegisterEventHandler("LootStackItemSentToTradeskillBag", 		"OnLootstackItemSentToTradeskillBag", self)
+
   Apollo.RegisterEventHandler("LootAssigned", "OnLootAssigned", self)
   Apollo.RegisterEventHandler("LootRollWon", "OnLootRollWon", self)
   Apollo.RegisterEventHandler("CombatLogLoot", "OnCombatLogLoot", self)
@@ -1605,6 +1609,13 @@ end
 function FSLootTracker:OnAddLookupItem( wndHandler, wndControl, eMouseButton )
 end
 
+function FSLootTracker:OnChannelUpdate_Loot(eType, tEventArgs)
+  if eType == GameLib.ChannelUpdateLootType.Currency and tEventArgs.monNew then
+    self:OnLootedMoney(tEventArgs.monNew)
+  elseif eType == GameLib.ChannelUpdateLootType.Item and tEventArgs.itemNew then
+    self:OnLootedItem(tEventArgs.itemNew, tEventArgs.nCount)
+  end
+end
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Instance
 -----------------------------------------------------------------------------------------------
