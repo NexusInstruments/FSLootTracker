@@ -15,15 +15,15 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
-local Major, Minor, Patch, Suffix = 2, 2, 0, 0
+local Major, Minor, Patch, Suffix = 2, 2, 1, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "2.0"
 
 local FSLootTracker = {}
 local FSLootTrackerInst
-
-local Chronology = {}
-local Cache = {}
+local Utils = Apollo.GetPackage("SimpleUtils").tPackage
+local Chronology = Apollo.GetPackage("Chronology").tPackage
+local Cache = Apollo.GetPackage("SimpleCache").tPackage
 
 -----------------------------------------------------------------------------------------------
 -- Constants
@@ -179,20 +179,6 @@ local strDefaultGuildInfoText =
   "Entity-US\n\n" ..
   "http://forscienceguild.org\n\n" ..
   "_.,-*~'`^`'~*-,._\n"
-
-function shallowcopy(orig)
-    local orig_type = type(orig)
-    local copy
-    if orig_type == 'table' then
-        copy = {}
-        for orig_key, orig_value in pairs(orig) do
-            copy[orig_key] = orig_value
-        end
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -529,8 +515,8 @@ function FSLootTracker:OnLoad()
   self.xmlDoc = XmlDoc.CreateFromFile("FSLootTracker.xml")
   self.xmlDoc:RegisterCallback("OnDocLoaded", self)
 
-  Chronology = Apollo.GetPackage("Chronology-1.0").tPackage
-  Cache = Apollo.GetPackage("SimpleCache-1.0").tPackage
+  Chronology = Apollo.GetPackage("Chronology").tPackage
+  Cache = Apollo.GetPackage("SimpleCache").tPackage
 
   for key, val in pairs(self.tCache) do
     self.tCache[key] = Cache:new()
