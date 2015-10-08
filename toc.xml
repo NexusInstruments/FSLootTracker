@@ -4,7 +4,8 @@
     <Form Name="FSLootTracker.xml"/>
     <Script Name="FSLootTracker_UI.lua"/>
     <Script Name="Cache.lua"/>
-    <Script Name="lib/JsonUtils-1.0.lua"/>
-    <Script Name="lib/GeminiHook-1.0.lua"/>
-    <Script Name="lib/Chronology-1.0.lua"/>
+    <Script Name="libs/GeminiHook-1.0.lua"/>
+    <Script Name="libs/SimpleUtils/SimpleUtils.lua"/>
+    <Script Name="libs/JsonUtils/JsonUtils-1.0.lua"/>
+    <Script Name="libs/Chronology/Chronology.lua"/>
 </Addon>
