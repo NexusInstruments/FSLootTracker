@@ -4,7 +4,7 @@ A Wildstar LUA library to format date and time objects as localized strings.
 
 Usage
 =====
-## Including the Library 
+## Including the Library
 ```lua
   local Chronology
   Chronology = Apollo.GetPackage("Chronology-1.0").tPackage
@@ -139,3 +139,6 @@ Value of strDateTime2:
 | day | Integer for the day of the week (1 - 7) |
 | bAbbrv | Abbreviated value (true/false) |
 | strLangCode | A language code string to use |
+
+**Licensed under MIT License**
+Copyright (c) 2015 NexusInstruments
