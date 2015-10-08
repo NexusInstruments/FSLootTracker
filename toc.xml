@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Chronosis" APIVersion="11" Name="FSLootTracker" Description="A simple addon to track loot drops" Version="2.0.0">
+<Addon Author="Chronosis" APIVersion="11" Name="FSLootTracker" Description="A simple addon to track loot drops" Version="2.2.1">
+    <Script Name="libs/GeminiHook-1.0.lua"/>
+    <Script Name="libs/SimpleUtils/SimpleUtils.lua"/>
+    <Script Name="libs/SimpleCache/SimpleCache.lua"/>
+    <Script Name="libs/JsonUtils/JsonUtils-1.0.lua"/>
+    <Script Name="libs/Chronology/Chronology.lua"/>
     <Script Name="FSLootTracker.lua"/>
     <Form Name="FSLootTracker.xml"/>
     <Script Name="FSLootTracker_UI.lua"/>
-    <Script Name="Cache.lua"/>
-    <Script Name="lib/JsonUtils-1.0.lua"/>
-    <Script Name="lib/GeminiHook-1.0.lua"/>
-    <Script Name="lib/Chronology-1.0.lua"/>
 </Addon>
