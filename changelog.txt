@@ -1,3 +1,9 @@
+Version 2.2.1
+* Fixed package inclusion errors
+
+Version 2.2.0
+* Update to API Version 11
+
 Version 2.1.3
 * Fixed bug with money list
 * Fixed bug with unknown zones
