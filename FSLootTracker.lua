@@ -15,7 +15,7 @@ require "GameLib"
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Module Definition
 -----------------------------------------------------------------------------------------------
-local Major, Minor, Patch, Suffix = 2, 2, 1, 0
+local Major, Minor, Patch, Suffix = 2, 2, 2, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "2.0"
 
@@ -321,6 +321,14 @@ end
 -- FSLootTracker OnLootedMoney
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootedMoney(moneyInstance)
+  local curZone = GameLib.GetCurrentZoneMap()
+  local zoneName = ""
+  if curZone then
+    zoneName = curZone.strName
+  else
+    zoneName = "Unknown"
+  end
+  
   local tNewEntry =
   {
     recordType = karDataTypes.money,
@@ -329,7 +337,7 @@ function FSLootTracker:OnLootedMoney(moneyInstance)
     source = self.tCache.SourceCache:GetAddValue(self.tState.lastSource),
     timeAdded = GameLib.GetGameTime(),
     timeReported = GameLib.GetLocalTime(),
-    zone = self.tCache.ZoneCache:GetAddValue(GameLib.GetCurrentZoneMap().strName)
+    zone = self.tCache.ZoneCache:GetAddValue(zoneName)
   }
   table.insert(self.tQueuedEntryData, tNewEntry)
   self.fLastTimeAdded = GameLib.GetGameTime()
