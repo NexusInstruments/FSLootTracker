@@ -1,3 +1,7 @@
+<pre>
+Version 2.2.2
+* Fixed error with zones that return nil
+
 Version 2.2.1
 * Fixed package inclusion errors
 
@@ -73,3 +77,4 @@ Version 1.7.2
 * Added support for persisting add-on setting. They are now saved and restored between sessions.
 * Fixed a bug where it was double reporting loot when rolled and won by the player running the addon
 * Fixed an issue where it was impossible to copy the export text.
+</pre>
