@@ -328,7 +328,7 @@ function FSLootTracker:OnLootedMoney(moneyInstance)
   else
     zoneName = "Unknown"
   end
-  
+
   local tNewEntry =
   {
     recordType = karDataTypes.money,
@@ -1138,86 +1138,88 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
 
   local itemData = self.tCache.ItemCache:GetValue(item.itemID)
   --table.insert(self.tItems, wnd)
-  local iQuality = itemData.quality
-  -- give it a piece of data to refer to
-  local wndItemText = wnd:FindChild("ItemText")
-  if wndItemText then -- make sure the text wnd exist
-    wndItemText:SetText(itemData.name)
-    wndItemText:SetTextColor(karItemQuality[iQuality].Color)
-  end
-  -- give it a piece of data to refer to
-  local wndItemType = wnd:FindChild("ItemType")
-  if wndItemType then -- make sure the text wnd exist
-    wndItemType:SetText(itemData.type)
-    --wndItemType:SetTextColor(kcrNormalText)
-  end
-  -- give it a piece of data to refer to
-  local wndItemPlayer = wnd:FindChild("ItemPlayer")
-  if wndItemPlayer then -- make sure the text wnd exist
-    wndItemPlayer:SetText(self.tCache.LooterCache:GetKeyFromValue(item.looter))
-    --wndItemPlayer:SetTextColor(kcrNormalText)
-  end
+  if itemData then
+    local iQuality = itemData.quality
+    -- give it a piece of data to refer to
+    local wndItemText = wnd:FindChild("ItemText")
+    if wndItemText then -- make sure the text wnd exist
+      wndItemText:SetText(itemData.name)
+      wndItemText:SetTextColor(karItemQuality[iQuality].Color)
+    end
+    -- give it a piece of data to refer to
+    local wndItemType = wnd:FindChild("ItemType")
+    if wndItemType then -- make sure the text wnd exist
+      wndItemType:SetText(itemData.type)
+      --wndItemType:SetTextColor(kcrNormalText)
+    end
+    -- give it a piece of data to refer to
+    local wndItemPlayer = wnd:FindChild("ItemPlayer")
+    if wndItemPlayer then -- make sure the text wnd exist
+      wndItemPlayer:SetText(self.tCache.LooterCache:GetKeyFromValue(item.looter))
+      --wndItemPlayer:SetTextColor(kcrNormalText)
+    end
 
-  -- give it a piece of data to refer to
-  local wndItemTimestamp = wnd:FindChild("ItemTimestamp")
-  if wndItemTimestamp then -- make sure the text wnd exist
-    local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
-    wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(item.timeReported, strFormat))
-    --wndItemTimestamp:SetText(time)
-    --wndItemTimestamp:SetTextColor(kcrNormalText)
-  end
+    -- give it a piece of data to refer to
+    local wndItemTimestamp = wnd:FindChild("ItemTimestamp")
+    if wndItemTimestamp then -- make sure the text wnd exist
+      local strFormat = ktTimeStampFormats[self.tConfig.timeFormat]
+      wndItemTimestamp:SetText(Chronology:GetFormattedDateTime(item.timeReported, strFormat))
+      --wndItemTimestamp:SetText(time)
+      --wndItemTimestamp:SetTextColor(kcrNormalText)
+    end
 
-  -- give it a piece of data to refer to
-  local wndItemValue = wnd:FindChild("ItemValue")
-  if wndItemValue then -- make sure the text wnd exist
-    wndItemValue:SetAmount(itemData.value)
-    wndItemValue:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
-  end
+    -- give it a piece of data to refer to
+    local wndItemValue = wnd:FindChild("ItemValue")
+    if wndItemValue then -- make sure the text wnd exist
+      wndItemValue:SetAmount(itemData.value)
+      wndItemValue:SetMoneySystem(Money.CodeEnumCurrencyType.Credits)
+    end
 
-  -- give it a piece of data to refer to
-  local wndItemSource = wnd:FindChild("ItemSource")
-  if wndItemSource then -- make sure the text wnd exist
-    wndItemSource:SetText(self.tCache.SourceCache:GetKeyFromValue(item.source))
-    --wndItemSource:SetTextColor(kcrNormalText)
-  end
+    -- give it a piece of data to refer to
+    local wndItemSource = wnd:FindChild("ItemSource")
+    if wndItemSource then -- make sure the text wnd exist
+      wndItemSource:SetText(self.tCache.SourceCache:GetKeyFromValue(item.source))
+      --wndItemSource:SetTextColor(kcrNormalText)
+    end
 
-  -- give it a piece of data to refer to
-  local wndItemZone = wnd:FindChild("ItemZone")
-  if wndItemZone then -- make sure the text wnd exist
-    wndItemZone:SetText(self.tCache.ZoneCache:GetKeyFromValue(item.zone))
-  end
+    -- give it a piece of data to refer to
+    local wndItemZone = wnd:FindChild("ItemZone")
+    if wndItemZone then -- make sure the text wnd exist
+      wndItemZone:SetText(self.tCache.ZoneCache:GetKeyFromValue(item.zone))
+    end
 
-  -- give it a piece of data to refer to
-  local wndItemSourceType = wnd:FindChild("ItemSourceType")
-  if wndItemSourceType then -- make sure the text wnd exist
-    local strNeed = ""
-    if item.rollType ~= nil then
-      if item.rollType == true then
-        strNeed = " (Need)"
-      else
-        strNeed = " (Greed)"
+    -- give it a piece of data to refer to
+    local wndItemSourceType = wnd:FindChild("ItemSourceType")
+    if wndItemSourceType then -- make sure the text wnd exist
+      local strNeed = ""
+      if item.rollType ~= nil then
+        if item.rollType == true then
+          strNeed = " (Need)"
+        else
+          strNeed = " (Greed)"
+        end
       end
+      wndItemSourceType:SetText(karLootSourcesNames[item.sourceType] .. strNeed)
     end
-    wndItemSourceType:SetText(karLootSourcesNames[item.sourceType] .. strNeed)
-  end
 
-  -- give it a piece of data to refer to
-  local wndItemBorder = wnd:FindChild("ItemBorder")
-  if wndItemBorder then -- make sure the text wnd exist
-    local wndItemIcon = wndItemBorder:FindChild("ItemIcon")
-    if wndItemIcon then
-      wndItemIcon:SetSprite(itemData.icon)
-      wndItemIcon:SetData(idx)
+    -- give it a piece of data to refer to
+    local wndItemBorder = wnd:FindChild("ItemBorder")
+    if wndItemBorder then -- make sure the text wnd exist
+      local wndItemIcon = wndItemBorder:FindChild("ItemIcon")
+      if wndItemIcon then
+        wndItemIcon:SetSprite(itemData.icon)
+        wndItemIcon:SetData(idx)
+      end
+      wndItemBorder:SetSprite(karItemQuality[iQuality].SquareSprite)
+      wndItemBorder:SetText("x" .. item.count ) --.. "�")
     end
-    wndItemBorder:SetSprite(karItemQuality[iQuality].SquareSprite)
-    wndItemBorder:SetText("x" .. item.count ) --.. "�")
-  end
 
-  wnd:SetData(idx)
-  -- keep track of the window item created
-  table.insert(self.tItemWindows, wnd)
-  --self.tItemWindows[self.curItemCount] = wnd
-  --self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount)
+    wnd:SetData(idx)
+    -- keep track of the window item created
+    table.insert(self.tItemWindows, wnd)
+    --self.tItemWindows[self.curItemCount] = wnd
+    --self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount)
+  end
 end
 
 -----------------------------------------------------------------------------------------------

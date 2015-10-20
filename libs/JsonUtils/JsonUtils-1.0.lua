@@ -3,8 +3,8 @@
 -----------------------------------------------------------------------------------------------
 local JSUMAJOR, JSUMINOR = "Json:Utils-1.0", 1
 local JSUPkg = Apollo.GetPackage(JSUMAJOR)
-if JSUPkg and (JSUPkg.nVersion or 0) >= MINOR then
-	return -- no upgrade needed
+if JSUPkg and (JSUPkg.nVersion or 0) >= JSUMINOR then
+  return -- no upgrade needed
 end
 
 -- Set a reference to the actual package or create an empty table
@@ -14,9 +14,9 @@ JsonUtils.embeded = JsonUtils.embeded or {}
 
 -- upgrading of embeded is done at the bottom of the file
 local mixins = {
-	"PrintProps", "onDecodeError", "onEncodeError", 
-	"JSONDecode", "JSONEncode", "JSONEncodePretty"
-}   
+  "PrintProps", "onDecodeError", "onEncodeError",
+  "JSONDecode", "JSONEncode", "JSONEncodePretty"
+}
 
 local isArray  = { __tostring = function() return "JSON array"  end }    isArray.__index  = isArray
 local isObject = { __tostring = function() return "JSON object" end }    isObject.__index = isObject
@@ -31,7 +31,7 @@ local chars_to_be_escaped_in_JSON_string
 
 -----------------------------------------------------------------------------------------------
 -- JsonUtils Testing Functions
------------------------------------------------------------------------------------------------   
+-----------------------------------------------------------------------------------------------
 local function object_or_array(self, T, etc)
    --
    -- We need to inspect all the keys... if there are any strings, we'll convert to a JSON
@@ -201,12 +201,12 @@ local function backslash_replacement_function(c)
       return string.format("\\u%04x", c:byte())
    end
 end
-    
+
 local function json_string_literal(value)
    local newval = string.gsub(value, chars_to_be_escaped_in_JSON_string, backslash_replacement_function)
    return '"' .. newval .. '"'
 end
-	
+
 -----------------------------------------------------------------------------------------------
 -- JsonUtils string parser functions
 -----------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ local function skip_whitespace(text, start)
    end
 end
 
--- Parses a Number	
+-- Parses a Number
 local function grok_number(self, text, start, etc)
    --
    -- Grab the integer part
@@ -447,25 +447,25 @@ grok_one = function(self, text, start, etc)
    else
       self:onDecodeError("can't parse JSON", text, start, etc)
    end
-end	
+end
 
 -----------------------------------------------------------------------------------------------
 -- JsonUtils Encode Value
------------------------------------------------------------------------------------------------	
+-----------------------------------------------------------------------------------------------
 local encode_value
 local function encode_value(self, value, parents, etc, indent) -- non-nil indent means pretty-printing
    local val = value
-   if type(value) == 'userdata' then 
+   if type(value) == 'userdata' then
       local newValue
       if value.GetPropertiesKeyed then
-	     newValue = value:GetPropertiesKeyed()
+       newValue = value:GetPropertiesKeyed()
          val = newValue
       else
-		 newValue = getmetatable(value)
-		 val = newValue	
+     newValue = getmetatable(value)
+     val = newValue
       end
-   end	 
-   
+   end
+
    if val == nil then
       return 'null'
 
@@ -500,10 +500,10 @@ local function encode_value(self, value, parents, etc, indent) -- non-nil indent
 
    elseif type(val) == 'boolean' then
       return tostring(val)
-	  
+
    elseif type(val) ~= 'table' then
       --self:onEncodeError("can't convert " .. type(val) .. " to JSON", etc)
-	  return 'null'
+    return 'null'
    else
       --
       -- A table to be converted to either a JSON object or array.
@@ -562,10 +562,10 @@ local function encode_value(self, value, parents, etc, indent) -- non-nil indent
          else
 
             local PARTS = { }
-			
+
             for _, key in ipairs(object_keys) do
-			   --Print(key)
-			   --Print(TT[key])
+         --Print(key)
+         --Print(TT[key])
                local encoded_val = encode_value(self, TT[key],       parents, etc, indent)
                local encoded_key = encode_value(self, tostring(key), parents, etc, indent)
                table.insert(PARTS, string.format("%s:%s", encoded_key, encoded_val))
@@ -636,18 +636,18 @@ function JsonUtils:newObject(tbl)
 end
 
 function JsonUtils:PrintProps(o, b)
-	local strBase = ""
-	if b ~= nil then 
-		strBase = b 
-	end
-	
-	if type(o) == table then
-		for key,value in pairs(o) do
-			Print(strBase .. "." .. key .. ":" .. JsonUtils:PrintProp(value, key));
-		end
-	else
-		return o
-	end 
+  local strBase = ""
+  if b ~= nil then
+    strBase = b
+  end
+
+  if type(o) == table then
+    for key,value in pairs(o) do
+      Print(strBase .. "." .. key .. ":" .. JsonUtils:PrintProp(value, key));
+    end
+  else
+    return o
+  end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -714,19 +714,19 @@ end
 -- JsonUtils Library / Apollo Routines
 -----------------------------------------------------------------------------------------------
 function JsonUtils:Embed( target )
-	for k, v in pairs( mixins ) do
-		target[v] = self[v]
-	end
-	self.embeded[target] = true
-	return target
+  for k, v in pairs( mixins ) do
+    target[v] = self[v]
+  end
+  self.embeded[target] = true
+  return target
 end
 
 -- No special on Init code
-function JsonUtils:OnLoad() 
+function JsonUtils:OnLoad()
 end
 
 -- No dependencies
-function JsonUtils:OnDependencyError(strDep, strError) return false 
+function JsonUtils:OnDependencyError(strDep, strError) return false
 end
 
 
@@ -736,7 +736,7 @@ end
 
 --- Upgrade our old embeded
 for target, v in pairs( JsonUtils.embeded ) do
-	JsonUtils:Embed( target )
+  JsonUtils:Embed( target )
 end
 
 Apollo.RegisterPackage(JsonUtils, JSUMAJOR, JSUMINOR, {})
