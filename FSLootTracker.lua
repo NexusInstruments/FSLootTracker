@@ -6,8 +6,20 @@
 --
 --	https://github.com/chronosis/FSLootTracker
 ------------------------------------------------------------------------------------------------
--- TODO: Options Screen -- Add Persistent Session Option, Source Filter, Black List
-
+-- TODO: Options Screen -- Add Persistent Session Option, Source Filter, Black List, Alert List, Export Format
+-- TODO: Finish Blacklist and Alert functionality
+-- TODO: Add Export formats (HTML, BBCODE, JSON, XML-CTLootTracker-EQDKP)
+-- TODO: Pixie Plot of statistics over time
+-- TODO: Add Purpose column and Mark As > Costume/Salvage/Bank/Loot option (default Loot)
+-- TODO: Move current view into a "Money Log" View
+-- TODO: Capture and Display Socket Types on the item Drop
+-- TODO: Track Boss Kills and attendance in raid at the moment of the kill.
+-- TODO: Save, View, Restore Sessions (Can't Delete Active Session)
+-- TODO: Add options to assign a source (kill)
+-- TODO: Tag Master Loot elligible items with the boss that thing that was just killed.
+-- TODO: Update Master Loot BOP items to be able to be reassigned to an elligible looter based on the information from the boss kill
+-- TODO: Column Sort functionality
+-- TODO: Localization
 require "Apollo"
 require "Window"
 require "GameLib"
