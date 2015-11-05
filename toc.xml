@@ -7,5 +7,13 @@
     <Script Name="libs/Chronology/Chronology.lua"/>
     <Script Name="FSLootTracker.lua"/>
     <Form Name="FSLootTracker.xml"/>
-    <Script Name="FSLootTracker_UI.lua"/>
+    <Script Name="FSLootTracker-Defaults.lua"/>
+    <Script Name="FSLootTracker-UI.lua"/>
+    <Script Name="FSLootTracker-UI-Info.lua"/>
+    <Script Name="FSLootTracker-UI-Flyout.lua"/>
+    <Script Name="FSLootTracker-UI-EditItem.lua"/>
+    <Script Name="FSLootTracker-UI-AddItem.lua"/>
+    <Script Name="FSLootTracker-UI-Export.lua"/>
+    <Script Name="FSLootTracker-UI-Sessions.lua"/>
+    <Script Name="FSLootTracker-UI-Options.lua"/>
 </Addon>
