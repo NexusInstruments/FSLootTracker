@@ -138,5 +138,70 @@ FSLootTracker.tExportFormats =
 {
   json = 1,
   bbcode = 2,
-  html = 3
+  html = 3,
+  eqdkpxml = 4
+}
+
+FSLootTracker.tExportFormatNames =
+{
+  [1] = "JSON",
+  [2] = "BBCode",
+  [3] = "HTML",
+  [4] = "EQDKP-XML 2.1"
+}
+
+FSLootTracker.tGraphWindowLengths =
+{
+  [1] = {
+    interval = 30,
+    text = "30m"
+  },
+  [2] = {
+    interval = 60,
+    text = "1hr"
+  },
+  [3] = {
+    interval = 120,
+    text = "2hr"
+  },
+  [4] = {
+    interval = 240,
+    text = "4hr"
+  },
+  [5] = {
+    interval = -1,
+    text = "∞"
+  }
+}
+
+FSLootTracker.tPollingIntervals =
+{
+  [1] = {
+    interval = 1,
+    text = "1s"
+  },
+  [2] = {
+    interval = 5,
+    text = "5s"
+  },
+  [3] = {
+    interval = 10,
+    text = "10s"
+  },
+  [4] = {
+    interval = 30,
+    text = "30s"
+  },
+  [5] = {
+    interval = 60,
+    text = "1m"
+  },
+  [6] = {
+    interval = 120,
+    text = "2m"
+  },
+  [7] = {
+    interval = 300,
+    text = "5m"
+  }
 }
