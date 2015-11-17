@@ -9,7 +9,7 @@ local Utils = Apollo.GetPackage("SimpleUtils").tPackage
 -- FSLootTracker Main Form -- List Item Flyout
 -----------------------------------------------------------------------------------------------
 -- when a list item is selected
-function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+function FSLootTracker:OnLootListItemSelected( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
   -- make sure the wndControl is valid
   if wndHandler ~= wndControl then
     return
@@ -30,9 +30,12 @@ function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton,
     else
       -- Close the last context window if you've opened a different one.
       local mousePos = Apollo.GetMouse()
-      --Print(self:JSONEncode(mousePos))
+      local tWinMain = self.state.windows.main:GetLocation():ToTable()
+      -- Calculate Offset from main window
+      local x, y = (mousePos.x - tWinMain.nOffsets[1]), (mousePos.y - tWinMain.nOffsets[2])
       -- Position it
-      self.state.windows.contextFlyout:SetAnchorOffsets(mousePos.x - self.tContextFlyoutSize.width, mousePos.y, mousePos.x , mousePos.y + self.tContextFlyoutSize.height)
+      local t = self:MakeWindowLocation(x, y, x + self.tContextFlyoutSize.width, y + self.tContextFlyoutSize.height)
+      self.state.windows.contextFlyout:MoveToLocation(WindowLocation.new(t))
       self.state.windows.contextFlyout:Show(true)
       self.state.windows.LastItemSelected = wndHandler
     end
@@ -55,23 +58,38 @@ function FSLootTracker:OnDeleteBtnClicked( wndHandler, wndControl, eMouseButton 
   self:RebuildLists()
 end
 
-function FSLootTracker:OnBlacklistBtnClicked( wndHandler, wndControl, eMouseButton )
-  self.state.windows.contextFlyout:Show(false)
+function FSLootTracker:OnIgnoreBtnClicked( wndHandler, wndControl, eMouseButton )
   -- Get Parent List item and associated item data.
   local index = self.state.windows.LastItemSelected:GetData()
+  local item = self.state.listItems.items[index]
+  local cItem = self.state.cache.ItemCache:GetValue(item.itemID)
+  self.settings.user.ignored[item.itemID] = cItem.name
+  -- Process item list for all ignored items and remove them
+  self.state.windows.contextFlyout:Show(false)
+  self:RebuildLists()
 end
 
-function FSLootTracker:OnItemExportBtnClicked( wndHandler, wndControl, eMouseButton )
-  self.state.windows.contextFlyout:Show(false)
+function FSLootTracker:OnWatchBtnClicked( wndHandler, wndControl, eMouseButton )
   -- Get Parent List item and associated item data.
   local index = self.state.windows.LastItemSelected:GetData()
+  local item = self.state.listItems.items[index]
+  local cItem = self.state.cache.ItemCache:GetValue(item.itemID)
+  self.settings.user.watched[item.itemID] = cItem.name
+  -- Process item list for all watched items and update counts
+  self.state.windows.contextFlyout:Show(false)
+  self:RebuildLists()
 end
 
+function FSLootTracker:OnMarkBtnToggle( wndHandler, wndControl, eMouseButton )
+  self.state.windows.contextFlyoutMarkAs:Show(wndHandler:IsChecked())
+end
 
 function FSLootTracker:OnMouseDown( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
   --self.state.windows.contextFlyout:Show(false)
 end
 
 function FSLootTracker:OnContextClosed( wndHandler, wndControl )
+  self.state.windows.contextFlyout:FindChild("FlyoutButtons"):FindChild("Mark"):SetCheck(false)
   self.state.windows.contextFlyout:Show(false)
+  self.state.windows.contextFlyoutMarkAs:Show(false)
 end

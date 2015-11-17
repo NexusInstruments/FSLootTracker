@@ -12,78 +12,47 @@ function FSLootTracker:OnConfigure()
   if self.state.windows.options == nil then
     self.state.windows.options = Apollo.LoadForm(self.xmlDoc, "LootTrackerOptionsWindow", nil, self)
     self.state.windows.optionsTabs = self.state.windows.options:FindChild("TabList")
-    self.state.windows.editConfigCosts = self.state.windows.options:FindChild("TabWindow1"):FindChild("OptionsConfigureCosts"):FindChild("EditBox")
-    self.state.windows.editConfigTimeFormat = self.state.windows.options:FindChild("TabWindow1"):FindChild("OptionsConfigureTimeFormat")
-    self.state.windows.editConfigTypes = self.state.windows.options:FindChild("TabWindow3"):FindChild("QualityBtns")
-    self.state.windows.editConfigSources = self.state.windows.options:FindChild("TabWindow3"):FindChild("SourceBtns")
-
-    -- Load Options
-
-    -- self.state.windows.options:FindChild("AutoMLButton"):SetCheck(self.settings.options.autoSetMasterLootWhenLeading)
-    -- self.state.windows.options:FindChild("EnableInDungeon"):SetCheck(self.settings.options.autoEnableInDungeon)
-    -- self.state.windows.options:FindChild("EnableInRaid"):SetCheck(self.settings.options.autoEnableInRaid)
-    -- self.state.windows.options:FindChild("AutoDisableButton"):SetCheck(self.settings.options.autoDisableUponExitInstance)
-    -- self.state.windows.options:FindChild("PartyLootRuleSelection"):SetData(self.settings.options.masterLootRule)
-    -- self.state.windows.options:FindChild("PartyLootRuleSelection"):SetText(self.tLootRules[self.settings.options.masterLootRule])
-    -- self.state.windows.options:FindChild("ThresholdSelection"):SetData(self.settings.options.masterLootQualityThreshold)
-    -- self.state.windows.options:FindChild("ThresholdSelection"):SetText(self.tItemQuality[self.settings.options.masterLootQualityThreshold].Name)
-    -- self.state.windows.options:FindChild("ThresholdSelection"):SetNormalTextColor(ApolloColor.new(self.tItemQuality[self.settings.options.masterLootQualityThreshold].Color))
+    self.state.windows.optionsExportFormatType = self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportDropdown")
+    self.state.windows.optionsIgnoredList = self.state.windows.options:FindChild("TabWindow2"):FindChild("IgnoreItemList")
+    self.state.windows.optionsWatchedList = self.state.windows.options:FindChild("TabWindow3"):FindChild("WatchItemList")
+    self.state.windows.optionsTrackedQuality = self.state.windows.options:FindChild("TabWindow4"):FindChild("QualityBtns")
+    self.state.windows.optionsTrackedSources = self.state.windows.options:FindChild("TabWindow4"):FindChild("SourceBtns")
 
     self.state.windows.options:Show(true)
+    self:PopulateExportFormatDropdown()
+    self:PopulateIgnoredList()
+    self:PopulateWatchedList()
     self:RefreshUIOptions()
   end
   self.state.windows.options:ToFront()
 end
 
----------------------------------------------------------------------------------------------------
--- OptionsContainer Functions
----------------------------------------------------------------------------------------------------
-function FSLootTracker:OnOptionsCloseClick( wndHandler, wndControl, eMouseButton )
-  self.state.windows.main:FindChild("ConfigButton"):SetCheck(false)
-  self:OnOptionsToggle()
-end
-
-function FSLootTracker:OnOptionsToggle( wndHandler, wndControl, eMouseButton )
-  local state = self.state.windows.main:FindChild("ConfigButton"):IsChecked()
-  self.state.windows.lootOpts:FindChild("OptionsContainer"):Show(state)
-  if state then
-    self:RefreshUIOptions()
-  else
-    self.settings.options.defaultCost = self.state.windows.editConfigCosts:GetText()
-  end
-end
-
-function FSLootTracker:OnQualityBtnChecked( wndHandler, wndControl, eMouseButton )
-  local name = wndControl:GetName()
-  local qualEnum = self.tItemQualityNames[name]
-  self.settings.options.qualityFilters[qualEnum] = true
-end
-
-function FSLootTracker:OnQualityBtnUnchecked( wndHandler, wndControl, eMouseButton )
-  local name = wndControl:GetName()
-  local qualEnum = self.tItemQualityNames[name]
-  self.settings.options.qualityFilters[self.tItemQualityNames[name]] = false
-end
-
-function FSLootTracker:OnTimeFormatCheck( wndHandler, wndControl, eMouseButton )
-  self.settings.options.timeFormat = wndControl:GetText()
-end
-
-
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Configuration UI Functions
 -----------------------------------------------------------------------------------------------
-
 function FSLootTracker:OnOptionsSave( wndHandler, wndControl, eMouseButton )
-  --local label = self.state.windows.options:FindChild("RuleSetName"):FindChild("Text"):GetText()
-  --local item = shallowcopy(self:GetBaseRuleSet())
-  --item.label = label
-  -- self.settings.options.autoSetMasterLootWhenLeading = self.state.windows.options:FindChild("AutoMLButton"):IsChecked()
-  -- self.settings.options.autoEnableInDungeon = self.state.windows.options:FindChild("EnableInDungeon"):IsChecked()
-  -- self.settings.options.autoEnableInRaid = self.state.windows.options:FindChild("EnableInRaid"):IsChecked()
-  -- self.settings.options.autoDisableUponExitInstance = self.state.windows.options:FindChild("AutoDisableButton"):IsChecked()
-  -- self.settings.options.masterLootRule  = self.state.windows.options:FindChild("PartyLootRuleSelection"):GetData()
-  -- self.settings.options.masterLootQualityThreshold = self.state.windows.options:FindChild("ThresholdSelection"):GetData()
+  -- Tab1
+  self.settings.options.defaultCost = self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):GetText()
+  self.settings.options.persistSession = self.state.windows.options:FindChild("TabWindow1"):FindChild("PersistButton"):IsChecked()
+  self.settings.options.debug = self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):IsChecked()
+  self.settings.options.exportFormat = self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):GetData()
+  self.settings.options.defaultCost = self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):GetText()
+  if self.state.windows.options:FindChild("TabWindow1"):FindChild("12h"):IsChecked() then
+    self.settings.options.timeFormat = "12h"
+  else
+    self.settings.options.timeFormat = "24h"
+  end
+  self.settings.options.pollingInterval = self.state.windows.options:FindChild("PollingIntervalValue"):GetData()
+  self.settings.options.graphLength = self.state.windows.options:FindChild("GraphLengthValue"):GetData()
+
+  -- Tab4
+  for k,v in pairs(self.settings.options.qualityFilters) do
+    self.settings.options.qualityFilters[k] = self.state.windows.optionsTrackedQuality:FindChild(self.tItemQuality[k].Name):IsChecked()
+  end
+
+  for k,v in pairs(self.settings.options.sourceFilters) do
+    self.settings.options.sourceFilters[k] = self.state.windows.optionsTrackedSources:FindChild(self.tLootSourcesNames[k]):IsChecked()
+  end
   self:CloseOptions()
 end
 
@@ -100,41 +69,151 @@ function FSLootTracker:CloseOptions()
   self.state.windows.options:Destroy()
   self.state.windows.options = nil
   self.state.windows.optionsTabs = nil
-  self.state.windows.editConfigCosts = nil
-  self.state.windows.editConfigTimeFormat = nil
-  self.state.windows.editConfigTypes = nil
-  self.state.windows.editConfigSources = nil
+  self.state.windows.optionsTrackedQuality = nil
+  self.state.windows.optionsTrackedSources = nil
+  self.state.windows.optionsExportFormatType = nil
+end
+
+function FSLootTracker:OnExportFormatBtn( wndHandler, wndControl, eMouseButton )
+  local bChecked = wndHandler:IsChecked()
+  self.state.windows.optionsExportFormatType:Show(bChecked)
+  self:ToggleOptionButtons(not bChecked)
+  if bChecked == true then
+    self.state.windows.optionsExportFormatType:ToFront()
+  end
+end
+
+function FSLootTracker:OnExportTypeSelectedUp( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY )
+  -- Check that the user hasn't moved out of the selected item.
+  if self.state.windows.selectedItem == wndHandler then
+    local idx = wndHandler:GetData()
+    local text = wndHandler:GetText()
+    local wnd = self.state.windows.optionsExportFormatType:GetParent()
+    local select = wnd:FindChild("ExportSelection")
+    local item = self.tExportFormatNames[idx]
+    select:SetCheck(false)
+    select:SetText(item)
+    select:SetData(idx)
+    wnd:FindChild("ExportDropdown"):Show(false)
+    self:ToggleOptionButtons(true)
+  end
+end
+
+function FSLootTracker:PopulateExportFormatDropdown()
+  local listWindow = self.state.windows.optionsExportFormatType
+  local list = self.state.listItems.exportFormats
+  local listItemName = "ExportTypeListItem"
+  --ItemTypeDropDownListItem
+  self:DestroyWindowList(list)
+  -- Loop through remaining items
+  for key,value in pairs(self.tExportFormatNames) do
+    local wnd = self:CreateDownListItem(key, value, listItemName, listWindow, nil)
+    table.insert(list, wnd)
+  end
+  listWindow:ArrangeChildrenVert()
+end
+
+function FSLootTracker:PopulateIgnoredList()
+  local listWindow = self.state.windows.optionsIgnoredList
+  local list = self.state.listItems.ignoredItems
+  local listItemName = "FilteredListItem"
+  --ItemTypeDropDownListItem
+  self:DestroyWindowList(list)
+  -- Loop through remaining items
+  if self.settings.user.ignored then
+    for key,value in pairs(self.settings.user.ignored) do
+      local wnd = self:CreateDownListItem("ignore|" .. key, value, listItemName, listWindow, nil)
+      table.insert(list, wnd)
+    end
+  end
+  listWindow:ArrangeChildrenVert()
+end
+
+function FSLootTracker:PopulateWatchedList()
+  local dropdown = self.state.windows.optionsWatchedList
+  local list = self.state.listItems.watchedItems
+  local listItemName = "FilteredListItem"
+  --ItemTypeDropDownListItem
+  self:DestroyWindowList(list)
+  -- Loop through remaining items
+  if self.settings.user.watched then
+    for key,value in pairs(self.settings.user.watched) do
+      local wnd = self:CreateDownListItem("watch|" .. key, value, listItemName, dropdown, nil)
+      table.insert(list, wnd)
+    end
+  end
+  dropdown:ArrangeChildrenVert()
+end
+
+function FSLootTracker:ToggleOptionButtons(state)
+  local persistButton = self.state.windows.options:FindChild("PersistButton")
+  local debugButton = self.state.windows.options:FindChild("DebugButton")
+  local h12Button = self.state.windows.options:FindChild("12h")
+  local h24Button = self.state.windows.options:FindChild("24h")
+  local cancelButton = self.state.windows.options:FindChild("CancelButton")
+  local saveButton = self.state.windows.options:FindChild("SaveButton")
+  local editBox = self.state.windows.options:FindChild("OptionsConfigureCostsEditBox")
+  local graphLength = self.state.windows.options:FindChild("GraphLengthSlider")
+  local pollingInterval = self.state.windows.options:FindChild("PollingIntervalSlider")
+  self.state.closeOptionDropdown = state
+  persistButton:Enable(state)
+  debugButton:Enable(state)
+  h12Button:Enable(state)
+  h24Button:Enable(state)
+  cancelButton:Enable(state)
+  saveButton:Enable(state)
+  editBox:Enable(state)
+  graphLength:Enable(state)
+  pollingInterval:Enable(state)
+end
+
+function FSLootTracker:OnPollingTimerSliderChanged( wndHandler, wndControl, fNewValue, fOldValue )
+  self.settings.options.pollingInterval = math.floor(fNewValue)
+  self.state.windows.options:FindChild("PollingIntervalValue"):SetText(self.tPollingIntervals[self.settings.options.pollingInterval].text)
+  self.state.windows.options:FindChild("PollingIntervalValue"):SetData(self.settings.options.pollingInterval)
+end
+
+function FSLootTracker:OnGraphLengthSliderChanged( wndHandler, wndControl, fNewValue, fOldValue )
+  self.settings.options.graphLength = math.floor(fNewValue)
+  self.state.windows.options:FindChild("GraphLengthValue"):SetText(self.tGraphWindowLengths[self.settings.options.graphLength].text)
+  self.state.windows.options:FindChild("GraphLengthValue"):SetData(self.settings.options.graphLength)
 end
 
 ---------------------------------------------------------------------------------------------------
 -- LootTrackerOptionsWindow Functions
 ---------------------------------------------------------------------------------------------------
 function FSLootTracker:OnConfigTabEnter( wndHandler, wndControl, x, y )
-  wndHandler:SetBGColor(self.tabColors.hover)
-  self.state.optionsHovered = true
+  if self.state.closeOptionDropdown then
+    wndHandler:SetBGColor(self.tabColors.hover)
+    self.state.optionsHovered = true
+  end
 end
 
 function FSLootTracker:OnConfigTabExit( wndHandler, wndControl, x, y )
-  self.state.optionsHovered = false
-  self:RefreshUIOptions()
+  if self.state.closeOptionDropdown then
+    self.state.optionsHovered = false
+    self:RefreshUIOptions()
+  end
 end
 
 function FSLootTracker:OnConfigTabPress( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
-  tab = wndHandler:GetParent()
-  tabName = tab:GetName()
-  tabID = tonumber(tabName)
+  if self.state.closeOptionDropdown then
+    tab = wndHandler:GetParent()
+    tabName = tab:GetName()
+    tabID = tonumber(tabName)
 
-  if self.state.curOptionTab ~= tabID then
-    self.state.curOptionTab = tabID
-    self:RefreshUIOptions()
-  else
-    -- Do Nothing
+    if self.state.curOptionTab ~= tabID then
+      self.state.curOptionTab = tabID
+      self:RefreshUIOptions()
+    else
+      -- Do Nothing
+    end
   end
 end
 
 function FSLootTracker:RefreshUIOptions()
   -- Set Tabs
-  for i=1,3 do
+  for i=1,4 do
     tab = self.state.windows.optionsTabs:FindChild("" .. i):FindChild("BG")
     tabWindow = self.state.windows.options:FindChild("TabWindow" .. i)
     if i == self.state.curOptionTab then
@@ -148,13 +227,67 @@ function FSLootTracker:RefreshUIOptions()
     end
   end
 
-  if self then
-    self.state.windows.editConfigCosts:SetText(self.settings.options.defaultCost)
-    -- initialize filter states
-    for k,v in pairs(self.settings.options.qualityFilters) do
-      self.state.windows.editConfigTypes:FindChild(self.tItemQuality[k].Name):SetCheck(v)
-    end
-    local button = self.state.windows.editConfigTimeFormat:FindChild(self.settings.options.timeFormat)
-      button:SetCheck(true)
+  -- Set Options
+  -- Tab1
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("PersistButton"):SetCheck(self.settings.options.persistSession)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):SetCheck(self.settings.user.debug)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):SetText(self.tExportFormatNames[self.settings.options.exportFormat])
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):SetData(self.settings.options.exportFormat)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild(self.settings.options.timeFormat):SetCheck(true)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):SetText(self.settings.options.defaultCost)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("GraphLengthSlider"):SetValue(self.settings.options.graphLength)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("GraphLengthValue"):SetText(self.tGraphWindowLengths[self.settings.options.graphLength].text)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("GraphLengthValue"):SetData(self.settings.options.graphLength)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("PollingIntervalSlider"):SetValue(self.settings.options.pollingInterval)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("PollingIntervalValue"):SetText(self.tPollingIntervals[self.settings.options.pollingInterval].text)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("PollingIntervalValue"):SetData(self.settings.options.pollingInterval)
+
+  -- Tab4
+  -- initialize filter states
+  for k,v in pairs(self.settings.options.qualityFilters) do
+    self.state.windows.optionsTrackedQuality:FindChild(self.tItemQuality[k].Name):SetCheck(v)
   end
+
+  for k,v in pairs(self.settings.options.sourceFilters) do
+    self.state.windows.optionsTrackedSources:FindChild(self.tLootSourcesNames[k]):SetCheck(v)
+  end
+end
+
+---------------------------------------------------------------------------------------------------
+-- FilteredListItem Functions
+---------------------------------------------------------------------------------------------------
+function FSLootTracker:OnDeleteFilteredItem( wndHandler, wndControl, eMouseButton )
+  local data = wndHandler:GetParent():GetData() -- this should return the lua object
+  local result = data:split("|")
+  local type = result[1]
+  local key = tonumber(result[2])
+  local list = {}
+  if type == "ignore" then
+    list = self.settings.user.ignored
+    list[key] = nil
+    self:PopulateIgnoredList()            -- Refreshes the list
+    self:RebuildLists()
+  elseif type == "watch" then
+    list = self.settings.user.watched
+    list[key] = nil
+    self:PopulateWatchedList()            -- Refreshes the list
+    self:RebuildLists()
+  end
+end
+
+---------------------------------------------------------------------------------------------------
+-- Tabs UI Functions
+---------------------------------------------------------------------------------------------------
+function FSLootTracker:OnListItemSelected( wndHandler, wndControl, eMouseButton, nLastRelativeMouseX, nLastRelativeMouseY, bDoubleClick, bStopPropagation )
+  -- Highlight
+  wndHandler:SetSprite("BK3:btnHolo_ListView_MidPressed")
+  self.state.windows.selectedItem = wndHandler
+end
+
+function FSLootTracker:OnListItemEntered( wndHandler, wndControl, x, y )
+  wndHandler:SetSprite("BK3:btnHolo_ListView_MidFlyby")
+end
+
+function FSLootTracker:OnListItemExited( wndHandler, wndControl, x, y )
+  wndHandler:SetSprite("BK3:btnHolo_ListView_MidNormal")
 end

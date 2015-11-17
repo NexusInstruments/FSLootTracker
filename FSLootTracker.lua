@@ -6,14 +6,13 @@
 --
 --	https://github.com/chronosis/FSLootTracker
 ------------------------------------------------------------------------------------------------
--- TODO: Options Screen -- Add Persistent Session Option, Source Filter, Black List, Alert List, Export Format
--- TODO: Finish Blacklist and Alert functionality
--- TODO: Add Export formats (HTML, BBCODE, JSON, XML-CTLootTracker-EQDKP)
--- TODO: Pixie Plot of statistics over time
+-- TODO: Finish Watch list functionality
+-- TODO: Rebuild Item Cache from Ignore and Watch Lists as well
+-- TODO: Pixie Plot of statistics over time and Move current view into a "Money Log" View
+-- TODO: Implement Export formats (HTML, XML-CTLootTracker-EQDKP)
 -- TODO: Add Purpose column and Mark As > Costume/Salvage/Bank/Loot option (default Loot)
--- TODO: Move current view into a "Money Log" View
 -- TODO: Capture and Display Socket Types on the item Drop
--- TODO: Track Boss Kills and attendance in raid at the moment of the kill.
+-- TODO: Track Boss Kills and attendance in raid at the moment of the kill and raid leave/join/offline/afk events
 -- TODO: Save, View, Restore Sessions (Can't Delete Active Session)
 -- TODO: Add options to assign a source (kill)
 -- TODO: Tag Master Loot elligible items with the boss that thing that was just killed.
@@ -67,8 +66,8 @@ local tDefaultSettings = {
   version = FSLOOTTRACKER_CURRENT_VERSION,
   user = {
     debug = false,
-    blacklist = {},         -- keep track of items that should be filtered
-    whitelist = {}          -- keep track of items that should be alerted
+    ignored = {},         -- keep track of items that should be filtered
+    watched = {}          -- keep track of items that should be alerted
   },
   positions = {
     main = nil
@@ -79,30 +78,34 @@ local tDefaultSettings = {
     defaultCost = 0,
     timeFormat = "12h",
     exportFormat = FSLootTracker.tExportFormats.bbcode,
+    graphLength = 3,
+    pollingInterval = 2,
     qualityFilters = {
-      [Item.CodeEnumItemQuality.Inferior] = false,
-      [Item.CodeEnumItemQuality.Average] = false,
-      [Item.CodeEnumItemQuality.Good]	= false,
-      [Item.CodeEnumItemQuality.Excellent] = false,
-      [Item.CodeEnumItemQuality.Superb] = false,
-      [Item.CodeEnumItemQuality.Legendary] = false,
-      [Item.CodeEnumItemQuality.Artifact] = false
+      [Item.CodeEnumItemQuality.Inferior] = true,
+      [Item.CodeEnumItemQuality.Average] = true,
+      [Item.CodeEnumItemQuality.Good]	= true,
+      [Item.CodeEnumItemQuality.Excellent] = true,
+      [Item.CodeEnumItemQuality.Superb] = true,
+      [Item.CodeEnumItemQuality.Legendary] = true,
+      [Item.CodeEnumItemQuality.Artifact] = true
     },
     sourceFilters = {
-      [FSLootTracker.tLootSources.Dropped] = false,
-      [FSLootTracker.tLootSources.Rolled] = false,
-      [FSLootTracker.tLootSources.Master] = false,
+      [FSLootTracker.tLootSources.Dropped] = true,
+      [FSLootTracker.tLootSources.Rolled] = true,
+      [FSLootTracker.tLootSources.Master] = true
     },
     sort = {
       Source = "Time",
       Direction = 0,
       UseItemData = false
     }
-  }
+  },
+  sessions = {}
 }
 
 local tDefaultState = {
   isOpen = false,           -- current window state
+  closeOptionDropdown = true,
   lastSource = "Unknown",   -- last loot source
   updateCount = 0,
   firstLoot = nil,
@@ -118,7 +121,8 @@ local tDefaultState = {
     options = nil,
     selectedItem = nil,
     itemWindows = {},       -- keep track of all the looted item windows
-    moneyWindows = {}     	-- keep track of all the looted money windows
+    moneyWindows = {},     	-- keep track of all the looted money windows
+    selectedItem = nil
   },
   listItems = {
     lootQueue = {},         -- Queued Loot
@@ -126,7 +130,11 @@ local tDefaultState = {
     money = {},             -- keep track of all the looted money
     items = {},             -- keep track of all the looted items
     itemsExport = {},       -- keep track of all the looted items
-    itemsEncoded = {}       -- keep track of all the looted items
+    itemsEncoded = {},      -- keep track of all the looted items
+    exportFormats = {},
+    ignoredItems = {},
+    watchedItems = {},
+    watchedItemCounts = {}
   },
   stats = {
     junkValue = 0,
@@ -401,8 +409,9 @@ function FSLootTracker:AddQueuedItem()
   if tQueuedData.recordType == self.tDataTypes.item then
     self:Debug("Item was added")
     local iQuality = tQueuedData.quality
-    -- Only add items of quality not being filtered
-    if self.settings.options.qualityFilters[iQuality] ~= true then
+    local iSourceType = tQueuedData.sourceType
+    -- Only add items of quality and source type being tracked
+    if self.settings.options.qualityFilters[iQuality] == true and self.settings.options.sourceFilters[iSourceType] == true then
       table.insert(self.state.listItems.items, tQueuedData)
     end
     -- Track Junk value
@@ -610,6 +619,7 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.ProcessingIndicator = self.state.windows.main:FindChild("ProcessingIndicator")
     self.state.windows.Sessions = self.state.windows.main:FindChild("SessionsForm")
     self.state.windows.contextFlyout = self.state.windows.main:FindChild("ContextFlyout")
+    self.state.windows.contextFlyoutMarkAs = self.state.windows.contextFlyout:FindChild("MarkButtons")
 
     self.state.windows.main:Show(false, true)
     self.state.windows.Sessions:Show(false)
@@ -620,11 +630,10 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.MoneyWindow:Show(false)
     self.state.windows.main:FindChild("HeaderButtons"):FindChild("SplashItemsBtn"):SetCheck(true)
 
-    local l, t, r, b = self.state.windows.contextFlyout:GetAnchorOffsets()
-    local w, h = (r-l), (b-t)
+    local flyOutLoc = self.state.windows.contextFlyout:GetLocation():ToTable()
     self.tContextFlyoutSize = {
-      width = w,
-      height = h
+      width = flyOutLoc.nOffsets[3] - flyOutLoc.nOffsets[1],
+      height = flyOutLoc.nOffsets[4] - flyOutLoc.nOffsets[2]
     }
     self.state.windows.contextFlyout:Show(false)
 
@@ -700,7 +709,12 @@ function FSLootTracker:RebuildLists()
 
   self:EmptyLists()
   for idx,item in ipairs(self.state.listItems.items) do
-    self:AddItem(idx, item)
+    -- Check if item is ignored and delete if it is
+    if self.settings.user.ignored[item.itemID] ~= nil then
+      self.state.listItems.items[idx] = nil
+    else
+      self:AddItem(idx, item)
+    end
   end
   for idx,money in ipairs(self.state.listItems.money) do
     self:AddMoney(idx, money)
@@ -883,7 +897,8 @@ function FSLootTracker:ClearLists()
         largest = 0
       }
     end
-      end
+  end
+  self.state.listItems.watchedItemCounts = {}
   self:RebuildLists()
   self:RefreshStats()
 end
@@ -905,6 +920,17 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
   --wndFlyoutBtn = wnd:FindChild("ContextButton")
   --wndFlyoutBtn:SetCheck(false)
   --wndFlyoutBtn:FindChild("contextFlyout"):Show(false)
+
+  -- Check if this item is watched, if it is increase the watched item count and change background color
+  if self.settings.user.watched[item.itemID] ~= nil then
+    wnd:SetBGColor(ApolloColor.new("ff00ff00"))
+    local c = self.state.listItems.watchedItemCounts[item.itemID]
+    if c then
+      self.state.listItems.watchedItemCounts[item.itemID] = c + 1
+    else
+      self.state.listItems.watchedItemCounts[item.itemID] = 1
+    end
+  end
 
   local itemData = self.state.cache.ItemCache:GetValue(item.itemID)
   --table.insert(self.state.listItems.items, wnd)
@@ -1055,11 +1081,12 @@ function FSLootTracker:OnRestore(eType, tSavedData)
 
     -- Fill in any missing values from the default options
     -- This Protects us from configuration additions in the future versions
-    for key, value in pairs(tDefaultSettings) do
-      if self.settings[key] == nil then
-        self.settings[key] = deepcopy(tDefaultSettings[key])
-      end
-    end
+    self:RecursiveLoad(tDefaultSettings, self.settings)
+    -- for key, value in pairs(tDefaultSettings) do
+    --   if self.settings[key] == nil then
+    --     self.settings[key] = deepcopy(tDefaultSettings[key])
+    --   end
+    -- end
 
     -- This section is for converting between versions that saved data differently
     if self.settings.version ~= FSLOOTTRACKER_CURRENT_VERSION then

@@ -16,4 +16,5 @@
     <Script Name="FSLootTracker-UI-Export.lua"/>
     <Script Name="FSLootTracker-UI-Sessions.lua"/>
     <Script Name="FSLootTracker-UI-Options.lua"/>
+    <Script Name="FSLootTracker-Utils.lua"/>
 </Addon>
