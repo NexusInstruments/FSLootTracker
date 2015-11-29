@@ -5,6 +5,7 @@
     <Script Name="libs/SimpleCache/SimpleCache.lua"/>
     <Script Name="libs/JsonUtils/JsonUtils-1.0.lua"/>
     <Script Name="libs/Chronology/Chronology.lua"/>
+    <Script Name="FakeQuest.lua"/>
     <Script Name="FSLootTracker.lua"/>
     <Form Name="FSLootTracker.xml"/>
     <Script Name="FSLootTracker-Defaults.lua"/>

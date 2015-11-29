@@ -114,6 +114,7 @@ local tDefaultState = {
   curMoneyCount = 0,        -- current count of money items logged
   curOptionTab = 1,         -- The currently loaded tab
   optionsHovered = false,
+  activeSession = nil,      -- Pointer to the currently active session
   windows = {               -- These store windows for lists
     main = nil,
     edit = nil,
@@ -193,7 +194,8 @@ local tDefaultState = {
     ItemCache = {},
     KillCache = {},
     EquipmentCache = {}
-  }
+  },
+  dataPoints = {}
 }
 
 function FSLootTracker:Debug( message )
