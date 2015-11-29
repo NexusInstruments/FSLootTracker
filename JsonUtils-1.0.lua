@@ -3,8 +3,8 @@
 -----------------------------------------------------------------------------------------------
 local JSUMAJOR, JSUMINOR = "Json:Utils-1.0", 1
 local JSUPkg = Apollo.GetPackage(JSUMAJOR)
-if JSUPkg and (JSUPkg.nVersion or 0) >= MINOR then
-	return -- no upgrade needed
+if JSUPkg and (JSUPkg.nVersion or 0) >= JSUMINOR then
+  return -- no upgrade needed
 end
 
 -- Set a reference to the actual package or create an empty table
@@ -14,9 +14,9 @@ JsonUtils.embeded = JsonUtils.embeded or {}
 
 -- upgrading of embeded is done at the bottom of the file
 local mixins = {
-	"PrintProps", "onDecodeError", "onEncodeError", 
-	"JSONDecode", "JSONEncode", "JSONEncodePretty"
-}   
+  "PrintProps", "onDecodeError", "onEncodeError",
+  "JSONDecode", "JSONEncode", "JSONEncodePretty"
+}
 
 local isArray  = { __tostring = function() return "JSON array"  end }    isArray.__index  = isArray
 local isObject = { __tostring = function() return "JSON object" end }    isObject.__index = isObject
@@ -31,7 +31,7 @@ local chars_to_be_escaped_in_JSON_string
 
 -----------------------------------------------------------------------------------------------
 -- JsonUtils Testing Functions
------------------------------------------------------------------------------------------------   
+-----------------------------------------------------------------------------------------------
 local function object_or_array(self, T, etc)
    --
    -- We need to inspect all the keys... if there are any strings, we'll convert to a JSON
@@ -56,7 +56,7 @@ local function object_or_array(self, T, etc)
             maximum_number_key = key
          end
       else
-         self:onEncodeError("can't encode table with a key of type " .. type(key), etc)
+         self:OnEncodeError("can't encode table with a key of type " .. type(key), etc)
       end
    end
 
@@ -86,7 +86,7 @@ local function object_or_array(self, T, etc)
       --
 
       if JsonUtils.noKeyConversion then
-         self:onEncodeError("a table with both numeric and string keys could be an object or array; aborting", etc)
+         self:OnEncodeError("a table with both numeric and string keys could be an object or array; aborting", etc)
       end
 
       --
@@ -108,7 +108,7 @@ local function object_or_array(self, T, etc)
             table.insert(string_keys , string_key)
             map[string_key] = T[number_key]
          else
-            self:onEncodeError("conflict converting table with mixed-type keys into a JSON object: key " .. number_key .. " exists both as a string and a number.", etc)
+            self:OnEncodeError("conflict converting table with mixed-type keys into a JSON object: key " .. number_key .. " exists both as a string and a number.", etc)
          end
       end
    end
@@ -201,12 +201,12 @@ local function backslash_replacement_function(c)
       return string.format("\\u%04x", c:byte())
    end
 end
-    
+
 local function json_string_literal(value)
    local newval = string.gsub(value, chars_to_be_escaped_in_JSON_string, backslash_replacement_function)
    return '"' .. newval .. '"'
 end
-	
+
 -----------------------------------------------------------------------------------------------
 -- JsonUtils string parser functions
 -----------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ local function skip_whitespace(text, start)
    end
 end
 
--- Parses a Number	
+-- Parses a Number
 local function grok_number(self, text, start, etc)
    --
    -- Grab the integer part
@@ -229,7 +229,7 @@ local function grok_number(self, text, start, etc)
                      or text:match("^-?0",        start)
 
    if not integer_part then
-      self:onDecodeError("expected number", text, start, etc)
+      self:OnDecodeError("expected number", text, start, etc)
    end
 
    local i = start + integer_part:len()
@@ -252,7 +252,7 @@ local function grok_number(self, text, start, etc)
    local as_number = tonumber(full_number_text)
 
    if not as_number then
-      self:onDecodeError("bad number", text, start, etc)
+      self:OnDecodeError("bad number", text, start, etc)
    end
 
    return as_number, i
@@ -262,7 +262,7 @@ end
 local function grok_string(self, text, start, etc)
 
    if text:sub(start,start) ~= '"' then
-      self:onDecodeError("expected string's opening quote", text, start, etc)
+      self:OnDecodeError("expected string's opening quote", text, start, etc)
    end
 
    local i = start + 1 -- +1 to bypass the initial quote
@@ -320,7 +320,7 @@ local function grok_string(self, text, start, etc)
       end
    end
 
-   self:onDecodeError("unclosed string", text, start, etc)
+   self:OnDecodeError("unclosed string", text, start, etc)
 end
 
 local grok_one -- assigned later
@@ -328,7 +328,7 @@ local grok_one -- assigned later
 -- Parses an Object
 local function grok_object(self, text, start, etc)
    if not text:sub(start,start) == '{' then
-      self:onDecodeError("expected '{'", text, start, etc)
+      self:OnDecodeError("expected '{'", text, start, etc)
    end
 
    local i = skip_whitespace(text, start + 1) -- +1 to skip the '{'
@@ -345,7 +345,7 @@ local function grok_object(self, text, start, etc)
       i = skip_whitespace(text, new_i)
 
       if text:sub(i, i) ~= ':' then
-         self:onDecodeError("expected colon", text, i, etc)
+         self:OnDecodeError("expected colon", text, i, etc)
       end
 
       i = skip_whitespace(text, i + 1)
@@ -366,19 +366,19 @@ local function grok_object(self, text, start, etc)
       end
 
       if text:sub(i, i) ~= ',' then
-         self:onDecodeError("expected comma or '}'", text, i, etc)
+         self:OnDecodeError("expected comma or '}'", text, i, etc)
       end
 
       i = skip_whitespace(text, i + 1)
    end
 
-   self:onDecodeError("unclosed '{'", text, start, etc)
+   self:OnDecodeError("unclosed '{'", text, start, etc)
 end
 
 -- Parses an Array
 local function grok_array(self, text, start, etc)
    if not text:sub(start,start) == '[' then
-      self:onDecodeError("expected '['", text, start, etc)
+      self:OnDecodeError("expected '['", text, start, etc)
    end
 
    local i = skip_whitespace(text, start + 1) -- +1 to skip the '['
@@ -407,11 +407,11 @@ local function grok_array(self, text, start, etc)
          return VALUE, i + 1
       end
       if text:sub(i, i) ~= ',' then
-         self:onDecodeError("expected comma or '['", text, i, etc)
+         self:OnDecodeError("expected comma or '['", text, i, etc)
       end
       i = skip_whitespace(text, i + 1)
    end
-   self:onDecodeError("unclosed '['", text, start, etc)
+   self:OnDecodeError("unclosed '['", text, start, etc)
 end
 
 -- Parses the next element in the string
@@ -420,7 +420,7 @@ grok_one = function(self, text, start, etc)
    start = skip_whitespace(text, start)
 
    if start > text:len() then
-      self:onDecodeError("unexpected end of string", text, nil, etc)
+      self:OnDecodeError("unexpected end of string", text, nil, etc)
    end
 
    if text:find('^"', start) then
@@ -445,27 +445,27 @@ grok_one = function(self, text, start, etc)
       return nil, start + 4
 
    else
-      self:onDecodeError("can't parse JSON", text, start, etc)
+      self:OnDecodeError("can't parse JSON", text, start, etc)
    end
-end	
+end
 
 -----------------------------------------------------------------------------------------------
 -- JsonUtils Encode Value
------------------------------------------------------------------------------------------------	
+-----------------------------------------------------------------------------------------------
 local encode_value
 local function encode_value(self, value, parents, etc, indent) -- non-nil indent means pretty-printing
    local val = value
-   if type(value) == 'userdata' then 
+   if type(value) == 'userdata' then
       local newValue
       if value.GetPropertiesKeyed then
-	     newValue = value:GetPropertiesKeyed()
+       newValue = value:GetPropertiesKeyed()
          val = newValue
       else
-		 newValue = getmetatable(value)
-		 val = newValue	
+     newValue = getmetatable(value)
+     val = newValue
       end
-   end	 
-   
+   end
+
    if val == nil then
       return 'null'
 
@@ -500,17 +500,17 @@ local function encode_value(self, value, parents, etc, indent) -- non-nil indent
 
    elseif type(val) == 'boolean' then
       return tostring(val)
-	  
+
    elseif type(val) ~= 'table' then
-      --self:onEncodeError("can't convert " .. type(val) .. " to JSON", etc)
-	  return 'null'
+      --self:OnEncodeError("can't convert " .. type(val) .. " to JSON", etc)
+    return 'null'
    else
       --
       -- A table to be converted to either a JSON object or array.
       --
       local T = val
       if parents[T] then
-         self:onEncodeError("table " .. tostring(T) .. " is a child of itself", etc)
+         self:OnEncodeError("table " .. tostring(T) .. " is a child of itself", etc)
       else
          parents[T] = true
       end
@@ -562,10 +562,10 @@ local function encode_value(self, value, parents, etc, indent) -- non-nil indent
          else
 
             local PARTS = { }
-			
+
             for _, key in ipairs(object_keys) do
-			   --Print(key)
-			   --Print(TT[key])
+         --Print(key)
+         --Print(TT[key])
                local encoded_val = encode_value(self, TT[key],       parents, etc, indent)
                local encoded_key = encode_value(self, tostring(key), parents, etc, indent)
                table.insert(PARTS, string.format("%s:%s", encoded_key, encoded_val))
@@ -590,9 +590,9 @@ end
 -----------------------------------------------------------------------------------------------
 function decode(text, etc)
    if text == nil then
-      self:onDecodeOfNilError(string.format("nil passed to JsonUtils:decode()"), nil, nil, etc)
+      self.OnDecodeOfNilError(string.format("nil passed to JsonUtils:decode()"), nil, nil, etc)
    elseif type(text) ~= 'string' then
-      self:onDecodeError(string.format("expected string argument to JsonUtils:decode(), got %s", type(text)), nil, nil, etc)
+      self.OnDecodeError(string.format("expected string argument to JsonUtils:decode(), got %s", type(text)), nil, nil, etc)
    end
 
    if text:match('^%s*$') then
@@ -605,7 +605,7 @@ function decode(text, etc)
    -- but this package can't handle them.
    --
    --if text:sub(1,1):byte() == 0 or (text:len() >= 2 and text:sub(2,2):byte() == 0) then
-   --  self:onDecodeError("JSON package groks only UTF-8, sorry", text, nil, etc)
+   --  self:OnDecodeError("JSON package groks only UTF-8, sorry", text, nil, etc)
    --end
 
    local success, value = pcall(grok_one, self, text, 1, etc)
@@ -613,7 +613,7 @@ function decode(text, etc)
    if success then
       return value
    else
-      -- if JSON:onDecodeError() didn't abort out of the pcall, we'll have received the error message here as "value", so pass it along as an assert.
+      -- if JSON:OnDecodeError() didn't abort out of the pcall, we'll have received the error message here as "value", so pass it along as an assert.
       Print(value)
       -- and if we're still here, return a nil and throw the error message on as a second arg
       return nil, value
@@ -636,24 +636,24 @@ function JsonUtils:newObject(tbl)
 end
 
 function JsonUtils:PrintProps(o, b)
-	local strBase = ""
-	if b ~= nil then 
-		strBase = b 
-	end
-	
-	if type(o) == table then
-		for key,value in pairs(o) do
-			Print(strBase .. "." .. key .. ":" .. JsonUtils:PrintProp(value, key));
-		end
-	else
-		return o
-	end 
+  local strBase = ""
+  if b ~= nil then
+    strBase = b
+  end
+
+  if type(o) == table then
+    for key,value in pairs(o) do
+      Print(strBase .. "." .. key .. ":" .. JsonUtils:PrintProp(value, key));
+    end
+  else
+    return o
+  end
 end
 
 -----------------------------------------------------------------------------------------------
 -- JsonUtils Error Handling
 -----------------------------------------------------------------------------------------------
-function JsonUtils:onDecodeError(message, text, location, etc)
+function JsonUtils:OnDecodeError(message, text, location, etc)
    if text then
       if location then
          message = string.format("%s at char %d of: %s", message, location, text)
@@ -669,10 +669,10 @@ function JsonUtils:onDecodeError(message, text, location, etc)
    Print(message)
 end
 
-JsonUtils.onDecodeOfNilError  = JsonUtils.onDecodeError
-JsonUtils.onDecodeOfHTMLError = JsonUtils.onDecodeError
+JsonUtils.OnDecodeOfNilError  = JsonUtils.OnDecodeError
+JsonUtils.OnDecodeOfHTMLError = JsonUtils.OnDecodeError
 
-function JsonUtils:onEncodeError(message, etc)
+function JsonUtils:OnEncodeError(message, etc)
    if etc ~= nil then
       message = message .. " (" .. JsonUtils:JSONEncode(etc) .. ")"
    end
@@ -714,19 +714,19 @@ end
 -- JsonUtils Library / Apollo Routines
 -----------------------------------------------------------------------------------------------
 function JsonUtils:Embed( target )
-	for k, v in pairs( mixins ) do
-		target[v] = self[v]
-	end
-	self.embeded[target] = true
-	return target
+  for k, v in pairs( mixins ) do
+    target[v] = self[v]
+  end
+  self.embeded[target] = true
+  return target
 end
 
 -- No special on Init code
-function JsonUtils:OnLoad() 
+function JsonUtils:OnLoad()
 end
 
 -- No dependencies
-function JsonUtils:OnDependencyError(strDep, strError) return false 
+function JsonUtils:OnDependencyError(strDep, strError) return false
 end
 
 
@@ -736,7 +736,7 @@ end
 
 --- Upgrade our old embeded
 for target, v in pairs( JsonUtils.embeded ) do
-	JsonUtils:Embed( target )
+  JsonUtils:Embed( target )
 end
 
 Apollo.RegisterPackage(JsonUtils, JSUMAJOR, JSUMINOR, {})
