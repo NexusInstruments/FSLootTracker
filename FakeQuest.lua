@@ -1,8 +1,77 @@
-require "Apollo"
-require "GameLib"
-
-local FakeQuest = {}
+------------------------------------------------------------------------------------------------
+--	FakeQuest ver. @project-version@
+--	by Chrono Syz--Entity-US
+--	Build @project-hash@
+--	Copyright (c) Chronosis. All rights reserved
+--
+--	https://github.com/NexusInstruments/FakeQuest
+------------------------------------------------------------------------------------------------
+--  FakeQuest.lua
+--	A emulated Quest object so that "Fake Quests" can be tracked in the Objective Tracker
+------------------------------------------------------------------------------------------------
+local PackageName, Major, Minor, Patch = "FakeQuest", 1, 0, 0
+local PkgMajor, PkgMinor = PackageName, tonumber(string.format("%02d%02d%02d", Major, Minor, Patch))
+local Pkg = Apollo.GetPackage(PkgMajor)
+if Pkg and (Pkg.nVersion or 0) >= PkgMinor then
+  return -- no upgrade needed
+end
+-- Set a reference to the actual package or create an empty table
+local FakeQuest = Pkg and Pkg.tPackage or {}
+local FakeQuestCategory = {}
 local Utils = Apollo.GetPackage("SimpleUtils").tPackage
+
+local baseRegion = {
+  x = 0,
+  y = 0
+}
+
+local baseIndicator = {
+  x = 0,
+  y = 0,
+  z = 0
+}
+
+local baseLocation = {
+  nWorldId = 0, -- continentId
+  nWorldZoneId = 0, -- zonId
+  tIndicator = {},
+  tRegions = {}
+}
+
+function FakeQuestCategory:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+
+  return o
+end
+
+function FakeQuestCategory:Init(id, title)
+  if id > 0 then
+    id = -id
+  end
+  self.id = id
+  self.title = title
+  self.type = 0
+  self.episode = {}
+  table.insert(self.episode, QuestLib.GetEpisode(1))
+end
+
+function FakeQuestCategory:GetCategoryType()
+  return self.type
+end
+
+function FakeQuestCategory:GetEpisodes()
+  return self.episode
+end
+
+function FakeQuestCategory:GetId()
+  return self.id
+end
+
+function FakeQuestCategory:GetTitle()
+  return self.title
+end
 
 function FakeQuest:new(o)
   o = o or {}
@@ -12,7 +81,11 @@ function FakeQuest:new(o)
   return o
 end
 
-function FakeQuest:Init(id, title)
+function FakeQuest:Init(id, title, categoryTitle)
+  if id > 0 then
+    id = -id
+  end
+
   self.id = id
   self.title = title
   self.currIndex = 0
@@ -20,42 +93,38 @@ function FakeQuest:Init(id, title)
   self.objStore = {}
   self.state = QuestLib.QuestState_Accepted
   self.valid = true
+  self.episode = QuestLib.GetEpisode(1)
+  self.category = FakeQuestCategory:new()
+  self.category:Init(id, categoryTitle)
+  self.position = {}
 end
 
-function FakeQuest:GetId()
-  return self.id or -1
-end
-
-function FakeQuest:GetEpisode()
-  return QuestLib.GetEpisode(1)
-end
-
-function FakeQuest:IsImbuementQuest()
+function FakeQuest:CanAbandon()
   return false
 end
 
-function FakeQuest:IsBreadcrumb()
-  return false
-end
-
-function FakeQuest:GetTitle()
-  return self.title or "Fake Quest"
-end
-
-function FakeQuest:GetState()
-  return self.state or Quest.QuestState_Accepted
-end
-
-function FakeQuest:IsQuestTimed()
-  return false
-end
-
-function FakeQuest:IsTracked()
+function FakeQuest:CanCompleteObjective()
   return true
 end
 
+function FakeQuest:CanShare()
+  return false
+end
+
+function FakeQuest:DisplayObjectiveProgressBar()
+  return false
+end
+
+function FakeQuest:GetCategory()
+  return self.category
+end
+
+function FakeQuest:GetChatLinkString()
+  return "<Q>"
+end
+
 function FakeQuest:GetColoredDifficulty()
-  return 5		-- Don't know what difficulty 5 is, but assumign it's normal
+  return 6		-- Don't know what difficulty 5 is, but assumign it's normal
 end
 
 function FakeQuest:GetConLevel()
@@ -66,37 +135,100 @@ function FakeQuest:GetDistance()
   return 0
 end
 
-function FakeQuest:GetMapRegions()
-  local position = {}
-  local t = {
-    [1] = {
-      nWorldId = 0, -- continentId
-      nWorldZonId = 0, -- zonId
-      tIndicator = {
-        x = 0,
-        y = 0,
-        z = 0
-      }, -- x,y,z
-      tRegions = {
-        [1] = {
-          x = 0,
-          y = 0
-        } -- x,y
-      }
-    }
-  }
+function FakeQuest:GetEpisode()
+  return QuestLib.GetEpisode(1)
+end
 
+function FakeQuest:GetId()
+  return self.id or -1
+end
+
+function FakeQuest:GetMapRegions()
+  local t = shallowcopy(baseLocation)
+  t.tIndicator = shallowcopy(baseIndicator)
+  table.insert(t.tRegions, shallowcopy(baseRegion))
+
+  local zoneMap = GameLib.GetCurrentZoneMap()
   local playerUnit = GameLib.GetPlayerUnit()
+
   if playerUnit then
-    t.tIndicator = playerUnit.GetPosition()
+    t.tIndicator = playerUnit:GetPosition()
     t.tRegions[1].x = t.tIndicator.x
     t.tRegions[1].y = t.tIndicator.z
+  end
+
+  if zoneMap then
+    t.nWorldId = zoneMap.nWorldId
+    t.nWorldZoneId = zoneMap.id
   end
   return t
 end
 
+function FakeQuest:GetMinLevel()
+  return 1
+end
+
+function FakeQuest:GetObjectiveCount()
+  return #self.objStore
+end
+
+function FakeQuest:GetObjectiveDescription(idx)
+  if self.objectives[idx] then
+    return self.objectives[idx].strDescription
+  end
+  return nil
+end
+
+function FakeQuest:GetSpell()
+  return nil
+end
+
+function FakeQuest:GetState()
+  return self.state or Quest.QuestState_Accepted
+end
+
+function FakeQuest:GetTitle()
+  return self.title or "Fake Quest"
+end
+
 function FakeQuest:GetVisibleObjectiveData()
   return self.objectives or {}
+end
+
+function FakeQuest:IsBreadcrumb()
+  return false
+end
+
+function FakeQuest:IsImbuementQuest()
+  return false
+end
+
+function FakeQuest:IsInactive()
+  return false
+end
+
+function FakeQuest:IsInLog()
+  return true
+end
+
+function FakeQuest:IsKnown()
+  return true
+end
+
+function FakeQuest:IsMentioned()
+  return false
+end
+
+function FakeQuest:IsPathQuest()
+  return false
+end
+
+function FakeQuest:IsQuestTimed()
+  return false
+end
+
+function FakeQuest:IsTracked()
+  return true
 end
 
 function FakeQuest:IsValid()
@@ -105,6 +237,26 @@ function FakeQuest:IsValid()
   end
   return true
 end
+
+function FakeQuest:SetActiveQuest(b)
+end
+
+function FakeQuest:SetTracked(b)
+end
+
+function FakeQuest:ShowHintArrow()
+end
+
+function FakeQuest:ToggleActiveQuest()
+end
+
+function FakeQuest:ToggleIgnored()
+end
+
+function FakeQuest:ToggleTracked()
+end
+
+-- ===========================================================================
 
 function FakeQuest:SetAccepted()
   self.state = Quest.QuestState_Accepted
@@ -148,6 +300,8 @@ function FakeQuest:RebuildObjectives()
     index = index + 1
   end
 end
+
+Apollo.RegisterPackage(FakeQuest, PkgMajor, PkgMinor, {})
 
 -- To Add or Update quest just do this
 --Event_FireGenericEvent("QuestTrackedChanged", quest, true)
