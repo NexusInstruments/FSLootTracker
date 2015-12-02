@@ -6,6 +6,37 @@ local Chronology = Apollo.GetPackage("Chronology").tPackage
 local Utils = Apollo.GetPackage("SimpleUtils").tPackage
 
 ---------------------------------------------------------------------------------------------------
+-- Export Data Functions
+---------------------------------------------------------------------------------------------------
+-- rebuild list used to export the data
+function FSLootTracker:RebuildExportList()
+  self.state.listItems.itemsExport = {}
+  for idx, itemInstance in ipairs(self.state.listItems.items) do
+    local item = self.state.cache.ItemCache:GetValue(itemInstance.itemID)
+    local itemName = item.name
+
+    local jabbitLink = "http://www.jabbithole.com/items/" .. self:StripCharacters(itemName) .. "-" .. tostring(itemInstance.itemID)
+
+    local tNewEntry =
+    {
+      itemID = itemInstance.itemID,
+      itemName = itemName,
+      itemQuality = itemInstance.quality,
+      itemILvl = item.iLvl,
+      itemType = item.type,
+      count = itemInstance.count,
+      looter = self.state.cache.LooterCache:GetKeyFromValue(itemInstance.looter),
+      source = self.state.cache.SourceCache:GetKeyFromValue(itemInstance.source),
+      cost = itemInstance.cost,
+      gameTimeAdded = itemInstance.timeAdded,
+      timeReported = itemInstance.timeReported,
+      jabbitLink = jabbitLink
+    }
+    table.insert(self.state.listItems.itemsExport, tNewEntry)
+  end
+end
+
+---------------------------------------------------------------------------------------------------
 -- ExportWindow Functions
 ---------------------------------------------------------------------------------------------------
 function FSLootTracker:OnExportData( wndHandler, wndControl, eMouseButton )
@@ -38,21 +69,17 @@ end
 function FSLootTracker:GenerateLootExportString()
   local exportString = ""
   if self.settings.options.exportFormat == self.tExportFormats.json then
-    exportString = self:JSONEncodePretty(self.state.listItems.itemsExport)
+    exportString = self:DoJSONExport()
+  elseif self.settings.options.exportFormat == self.tExportFormats.bbcode then
+    exportString = self:DoBBCodeExport()
+  elseif self.settings.options.exportFormat == self.tExportFormats.html then
+    exportString = self:DoHTMLExport()
+  elseif self.settings.options.exportFormat == self.tExportFormats.eqdkpxml then
+    exportString = self:DoEQDKPXMLExport()
+  elseif self.settings.options.exportFormat == self.tExportFormats.csv then
+    exportString = self:DoCSVExport()
   end
 
-  if self.settings.options.exportFormat == self.tExportFormats.bbcode then
-    for i,v in ipairs(self.state.listItems.itemsExport) do
-      local time = v.timeReported
-      exportString = exportString .. "(" .. Chronology:GetFormattedDateTime(time) .. ") [b]" .. v.source .. "[/b] - " .. v.looter .. " - [url=" .. v.jabbitLink .. "]" .. v.itemName .. "[/url]\n"
-    end
-  end
-
-  if self.settings.options.exportFormat == self.tExportFormats.html then
-    for i,v in ipairs(self.state.listItems.itemsExport) do
-
-    end
-  end
 
   if exportString == "" then
     -- Unknown format
@@ -60,4 +87,39 @@ function FSLootTracker:GenerateLootExportString()
   end
 
   return exportString
+end
+
+function FSLootTracker:DoJSONExport()
+  return self:JSONEncodePretty(self.state.listItems.itemsExport)
+end
+
+function FSLootTracker:DoBBCodeExport()
+  local str = ""
+  for i,v in ipairs(self.state.listItems.itemsExport) do
+    local time = v.timeReported
+    str = str .. "(" .. Chronology:GetFormattedDateTime(time) .. ") [b]" .. v.source .. "[/b] - " .. v.looter .. " - [url=" .. v.jabbitLink .. "]" .. v.itemName .. "[/url]\n"
+  end
+  return str
+end
+
+function FSLootTracker:DoHTMLExport()
+  local str = "<html><body><table>\n<tr><th>TIMESTAMP</th><th>ID</th><th>NAME</th><th>COUNT</th><th>LOOTER</th><th>SOURCE</th><th>COST</th><th>QUALITY</th><th>ILVL</th><th>TYPE</th></tr>\n"
+  for i,v in ipairs(self.state.listItems.itemsExport) do
+    local time = v.timeReported
+    str = str .. "<tr><td>" .. Chronology:GetFormattedDateTime(time) .. "</td><td>" .. v.itemID .. "</td><td><a href='" .. v.jabbitLink .. "'>" .. v.itemName .. "</a></td><td>" .. v.count .. "</td><td>" .. v.looter .. "</td><td>" .. v.source .. "</td><td>" .. v.cost .. "</td><td>" .. v.itemQuality .. "</td><td>" .. v.itemILvl .. "</td><td>" .. v.itemType .. "</td></tr>\n"
+  end
+  str = str .. "</table></body></html>"
+  return str
+end
+
+function FSLootTracker:DoCSVExport()
+  local str = "TIMESTAMP, ID, NAME, COUNT, LOOTER, SOURCE, COST, QUALITY, ILVL, TYPE\n"
+  for i,v in ipairs(self.state.listItems.itemsExport) do
+    local time = v.timeReported
+    str = str .. "" .. Chronology:GetFormattedDateTime(time) .. ", " .. v.itemID .. ", " .. v.itemName .. ", " .. v.count .. ", " .. v.looter .. ", " .. v.source .. ", " .. v.cost .. ", " .. v.itemQuality .. ", " .. v.itemILvl .. ", " .. v.itemType .. "\n"
+  end
+  return str
+end
+
+function FSLootTracker:DoEQDKPXMLExport()
 end

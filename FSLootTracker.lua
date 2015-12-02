@@ -8,7 +8,7 @@
 ------------------------------------------------------------------------------------------------
 -- TODO: Rebuild Item Cache from Ignore and Watch Lists as well
 -- TODO: Pixie Plot of statistics over time and Move current view into a "Money Log" View
--- TODO: Implement Export formats (HTML, XML-CTLootTracker-EQDKP)
+-- TODO: Implement Export formats (HTML, CSV, XML-CTLootTracker-EQDKP)
 -- TODO: Add Purpose column and Mark As > Costume/Salvage/Bank/Loot option (default Loot)
 -- TODO: Capture and Display Socket Types on the item Drop
 -- TODO: Track Boss Kills and attendance in raid at the moment of the kill and raid leave/join/offline/afk events
@@ -52,9 +52,11 @@ FSLootTracker.tLootSources =
 
 FSLootTracker.tExportFormats =
 {
-  json = "json",
-  bbcode = "bbcode",
-  html = "html"
+  json = 1,
+  bbcode = 2,
+  html = 3,
+  eqdkpxml = 4,
+  csv = 5
 }
 
 -----------------------------------------------------------------------------------------------
@@ -256,7 +258,7 @@ function FSLootTracker:CacheItem(itemInstance)
     local item = {
       quality = itemInstance:GetItemQuality() or Item.CodeEnumItemQuality.Average,
       name = itemInstance:GetName(),
-      iLvl = itemInstance:GetItemPower(),
+      iLvl = itemInstance:GetEffectiveLevel(),
       icon = itemInstance:GetIcon(),
       type = itemInstance:GetItemTypeName() .. " (" .. itemInstance:GetItemType() .. ")",
       value = v
@@ -318,6 +320,7 @@ function FSLootTracker:GetLootItemEventData(itemInstance, itemCount, itemSource,
     cost = self.settings.options.defaultCost,
     looter = self.state.cache.LooterCache:GetAddValue(itemLooter),
     quality = iQuality,
+    iLvl = itemInstance:GetEffectiveLevel(),
     source =  self.state.cache.SourceCache:GetAddValue(self.state.lastSource),
     sourceType = self.tLootSources[itemSource],
     rollType = itemNeed,
@@ -764,34 +767,6 @@ function FSLootTracker:StripCharacters(str)
   return s
 end
 
--- rebuild list used to export the data
-function FSLootTracker:RebuildExportList()
-  self.state.listItems.itemsExport = {}
-  for idx, itemInstance in ipairs(self.state.listItems.items) do
-    local item = self.state.cache.ItemCache:GetValue(itemInstance.itemID)
-    local itemName = item.name
-
-    local jabbitLink = "http://www.jabbithole.com/items/" .. self:StripCharacters(itemName) .. "-" .. tostring(itemInstance.itemID)
-
-    local tNewEntry =
-    {
-      itemID = itemInstance.itemID,
-      itemName = itemName,
-      itemQuality = itemInstance.quality,
-      itemILvl = itemInstance.iLvl,
-      itemType = item.type,
-      count = itemInstance.count,
-      looter = self.state.cache.LooterCache:GetKeyFromValue(itemInstance.looter),
-      source = self.state.cache.SourceCache:GetKeyFromValue(itemInstance.source),
-      cost = itemInstance.cost,
-      gameTimeAdded = itemInstance.timeAdded,
-      timeReported = itemInstance.timeReported,
-      jabbitLink = jabbitLink
-    }
-    table.insert(self.state.listItems.itemsExport, tNewEntry)
-  end
-end
-
 -----------------------------------------------------------------------------------------------
 -- MoneyList Functions
 -----------------------------------------------------------------------------------------------
@@ -949,7 +924,7 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
   end
 
   local itemData = self.state.cache.ItemCache:GetValue(item.itemID)
-  --table.insert(self.state.listItems.items, wnd)
+
   if itemData then
     local iQuality = itemData.quality
     -- give it a piece of data to refer to

@@ -139,7 +139,8 @@ FSLootTracker.tExportFormats =
   json = 1,
   bbcode = 2,
   html = 3,
-  eqdkpxml = 4
+  eqdkpxml = 4,
+  csv = 5
 }
 
 FSLootTracker.tExportFormatNames =
@@ -147,7 +148,8 @@ FSLootTracker.tExportFormatNames =
   [1] = "JSON",
   [2] = "BBCode",
   [3] = "HTML",
-  [4] = "EQDKP-XML 2.1"
+  [4] = "EQDKP-XML 2.1",
+  [5] = "CSV"
 }
 
 FSLootTracker.tGraphWindowLengths =
