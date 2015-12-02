@@ -6,7 +6,6 @@
 --
 --	https://github.com/chronosis/FSLootTracker
 ------------------------------------------------------------------------------------------------
--- TODO: Finish Watch list functionality
 -- TODO: Rebuild Item Cache from Ignore and Watch Lists as well
 -- TODO: Pixie Plot of statistics over time and Move current view into a "Money Log" View
 -- TODO: Implement Export formats (HTML, XML-CTLootTracker-EQDKP)
@@ -30,7 +29,6 @@ local FSLootTracker = {}
 local Utils = Apollo.GetPackage("SimpleUtils").tPackage
 local Chronology = Apollo.GetPackage("Chronology").tPackage
 local Cache = Apollo.GetPackage("SimpleCache").tPackage
-local FakeQuest = Apollo.GetPackage("FakeQuest").tPackage
 
 local Major, Minor, Patch, Suffix = 2, 2, 2, 0  -- TODO: Change to 3.0.0.0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
@@ -117,6 +115,7 @@ local tDefaultState = {
   curOptionTab = 1,         -- The currently loaded tab
   optionsHovered = false,
   activeSession = nil,      -- Pointer to the currently active session
+  watchCountSum = 0,
   windows = {               -- These store windows for lists
     main = nil,
     edit = nil,
@@ -125,7 +124,11 @@ local tDefaultState = {
     selectedItem = nil,
     itemWindows = {},       -- keep track of all the looted item windows
     moneyWindows = {},     	-- keep track of all the looted money windows
-    tracker = nil
+    ignoredItems = {},
+    watchedItems = {},
+    tracker = nil,
+    trackerObjectiveList = nil,
+    trackerObjectiveWindows = {}     	-- keep track of all the looted money windows
   },
   listItems = {
     lootQueue = {},         -- Queued Loot
@@ -135,8 +138,6 @@ local tDefaultState = {
     itemsExport = {},       -- keep track of all the looted items
     itemsEncoded = {},      -- keep track of all the looted items
     exportFormats = {},
-    ignoredItems = {},
-    watchedItems = {},
     watchedItemCounts = {}
   },
   stats = {
@@ -456,11 +457,10 @@ function FSLootTracker:OnInterfaceMenuListHasLoaded()
   strPlayerName = GameLib.GetPlayerUnit():GetName()
   self:RebuildLists()
   self:RefreshStats()
+  self:ResizeAllTracker()
 
   -- Report Self
   Event_FireGenericEvent("OneVersion_ReportAddonInfo", "FSLootTracker", Major, Minor, Patch, Suffix, false)
-
-  --Event_FireGenericEvent("QuestTrackedChanged", self.questTrack, true)
 end
 
 -----------------------------------------------------------------------------------------------
@@ -704,6 +704,9 @@ function FSLootTracker:EmptyLists()
   for idx,wnd in ipairs(self.state.windows.moneyWindows) do
     wnd:Destroy()
   end
+  for id,name in pairs(self.settings.user.watched) do
+    self.state.listItems.watchedItemCounts[id] = 0
+  end
 
   self.state.windows.ItemList:DestroyChildren()
   self.state.windows.MoneyList:DestroyChildren()
@@ -739,6 +742,7 @@ function FSLootTracker:RebuildLists()
   -- Restore Scroll Position
   self.state.windows.ItemList:SetVScrollPos(itemVScrollPos)
   self.state.windows.MoneyList:SetVScrollPos(moneyVScrollPos)
+  self:UpdateTrackedWatches()
 end
 
 -- clear the item list
@@ -1165,64 +1169,6 @@ function FSLootTracker:OnRecordingButtonPressed( wndHandler, wndControl, eMouseB
   --Event_FireGenericEvent("QuestTrackedChanged", self.questTrack, true)
 end
 
-function FSLootTracker:OnObjectiveTrackerLoaded(wndForm)
-	if not wndForm or not wndForm:IsValid() then
-		return
-	end
-
-  Apollo.RemoveEventHandler("ObjectiveTrackerLoaded", self)
-
-	Apollo.RegisterEventHandler("ToggleShowTrackedLoot", "OnToggleShowTrackedLoot", self)
-
-  self.state.windows.tracker = Apollo.LoadForm(self.xmlDoc, "LootObjectiveTracker", wndForm, self)
-  self.state.windows.trackerObjectiveList = self.state.windows.tracker:FindChild("ObjectiveList")
-
-  -- Initialize Watch List
-  local tTrackerData = {
-    ["strAddon"] = "Watched Loot",
-    ["bNoBtn"] = false,
-    ["strDefaultSort"] = "0000FSLootTracker",
-    ["strEventMouseLeft"] = "ToggleShowTrackedLoot",
-    ["strText"] = "0",
-    ["strIcon"] = "FSLootSprites:BigChest"
-  }
-  Event_FireGenericEvent("ObjectiveTracker_NewAddOn", tTrackerData)
-  self:ResizeAllTracker()
-end
-
-function FSLootTracker:OnToggleShowTrackedLoot()
-	self.settings.options.showTrackedLoot = not self.settings.options.showTrackedLoot
-
-	self:ResizeAllTracker()
-end
-
-function FSLootTracker:ResizeAllTracker()
-  local nStartingHeight = self.state.windows.tracker:GetHeight()
-	local bStartingShown = self.state.windows.tracker:IsShown()
-  local listHeight = 0
-
-	if self.settings.options.showTrackedLoot then
-    local arChildren = self.state.windows.trackerObjectiveList:GetChildren()
-    listHeight = 24 * #arChildren
-  end
-  listHeight = listHeight + 32
-
-  self.state.windows.tracker:Show(self.settings.options.showTrackedLoot)
-
-  local nLeft, nTop, nRight, nBottom = self.state.windows.tracker:GetAnchorOffsets()
-  self.state.windows.tracker:SetAnchorOffsets(nLeft, nTop, nRight, nTop + listHeight)
-
-  if nStartingHeight ~= self.state.windows.tracker:GetHeight() or self.settings.options.showTrackedLoot ~= bStartingShown then
-  	local tData =
-  	{
-  		["strAddon"] = "Watched Loot",
-  		["strText"] = "0",
-  		["bChecked"] = self.settings.options.showTrackedLoot,
-  	}
-
-  	Event_FireGenericEvent("ObjectiveTracker_UpdateAddOn", tData)
-  end
-end
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Instance
 -----------------------------------------------------------------------------------------------

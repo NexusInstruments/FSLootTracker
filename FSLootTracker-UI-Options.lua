@@ -115,7 +115,7 @@ end
 
 function FSLootTracker:PopulateIgnoredList()
   local listWindow = self.state.windows.optionsIgnoredList
-  local list = self.state.listItems.ignoredItems
+  local list = self.state.windows.ignoredItems
   local listItemName = "FilteredListItem"
   --ItemTypeDropDownListItem
   self:DestroyWindowList(list)
@@ -131,7 +131,7 @@ end
 
 function FSLootTracker:PopulateWatchedList()
   local dropdown = self.state.windows.optionsWatchedList
-  local list = self.state.listItems.watchedItems
+  local list = self.state.windows.watchedItems
   local listItemName = "FilteredListItem"
   --ItemTypeDropDownListItem
   self:DestroyWindowList(list)
@@ -272,6 +272,7 @@ function FSLootTracker:OnDeleteFilteredItem( wndHandler, wndControl, eMouseButto
     list[key] = nil
     self:PopulateWatchedList()            -- Refreshes the list
     self:RebuildLists()
+    self:ResizeAllTracker()
   end
 end
 

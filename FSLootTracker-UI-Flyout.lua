@@ -78,6 +78,7 @@ function FSLootTracker:OnWatchBtnClicked( wndHandler, wndControl, eMouseButton )
   -- Process item list for all watched items and update counts
   self.state.windows.contextFlyout:Show(false)
   self:RebuildLists()
+  self:ResizeAllTracker()
 end
 
 function FSLootTracker:OnMarkBtnToggle( wndHandler, wndControl, eMouseButton )
