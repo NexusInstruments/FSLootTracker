@@ -37,9 +37,13 @@ local tCanvasDefaultState = {
 		width = 0,
 		height = 0
 	}
+	timer = {
+		id = "",
+		counter = 0,
+		batchSize = 400,
+		refresh = 0.01
+	}
 	activePixies = {},
-	redrawCounter = 0,
-	timerId = ""
 }
 
 ------------------------------------------------------------------------------------------------
@@ -103,9 +107,9 @@ function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
 
 	-- Initialize the buffer
 	self:ClearBuffer()
-	self.state.timerId = "Seraut_Canvas_" .. self.state.canvas.id
+	self.state.timer.id = "Seraut_Canvas_" .. self.state.canvas.id
 	-- Setup Redraw Timer
-	Apollo.RegisterTimerHandler(self.state.timerId, "RedrawTimer", self)
+	Apollo.RegisterTimerHandler(self.state.timer.id, "RedrawTimer", self)
 end
 
 function Canvas:Clear()
@@ -157,18 +161,140 @@ function Canvas:PlotVLine(x,y1,y2,color)
 	end
 end
 
+function Canvas:GetHPixieCount()
+	local count
+	for y=0,self.state.buffer.height do
+		local lastColor = ""
+		for x=0,self.state.buffer.width do
+			local loc = y * self.state.buffer.width + x
+			local color = self.state.buffer.data[loc + 1]
+			if lastColor ~= color then
+				count = count + 1
+			end
+		end
+	end
+	return count
+end
+
+function Canvas:GetVPixieCount()
+	local count
+	for x=0,self.state.buffer.width do
+		local lastColor = ""
+		for y=0,self.state.buffer.height do
+			local loc = y * self.state.buffer.width + x
+			local color = self.state.buffer.data[loc + 1]
+			if lastColor ~= color then
+				count = count + 1
+			end
+		end
+	end
+	return count
+end
+
+function Canvas:Render()
+	-- Determine if H or V lines will be best optimized -- if tied use H lines.
+	local vcount = self:GetVPixieCount()
+	local hcount = self:GetHPixieCount()
+	if vcount < hcount then
+		self:RenderV()
+	else
+		self:RenderH()
+	end
+end
+
+function Canvas:AddPixie(x1,y1,x2,y2,color,active)
+	local topleft = {0,0,0,0}
+	local t = {
+		active = active,
+		pixie = {
+			strSprite = "WhiteFill",
+			cr = lastColor
+			loc = {
+				fPoints = topleft,
+				nOffsets = {x1, y1, x2, y2}
+			}
+		}
+	}
+	table.insert(self.state.activePixies, t)
+end
+
+function Canvas:RenderH()
+	local active = true
+	for y=0,self.state.buffer.height do
+		local lastColor = ""
+		local currentPixieX = nil
+		for x=0,self.state.buffer.width do
+			local loc = y * self.state.buffer.width + x
+			local color = self.state.buffer.data[loc + 1]
+			if lastColor ~= color then
+				-- End previous pixie and insert, start next pixie
+				if currentPixieX then
+					-- Compare lastColor with background color -- if the same mark active false
+					-- End previous
+					self.AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+				end
+				currentPixieX = x
+			end
+		end
+		-- end last pixie and insert
+		self.AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, self.state.buffer.width * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+	end
+end
+
+function Canvas:RenderV()
+	local active = true
+	for x=0,self.state.buffer.width do
+		local lastColor = ""
+		local currentPixieY = nil
+		for y=0,self.state.buffer.height do
+			local loc = y * self.state.buffer.width + x
+			local color = self.state.buffer.data[loc + 1]
+			if lastColor ~= color then
+				-- End previous pixie and insert, start next pixie
+				if currentPixieY then
+					-- Compare lastColor with background color -- if the same mark active false
+					-- End previous
+					self.AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
+				end
+				currentPixieY = y
+			end
+		end
+		-- end last pixie and insert
+		self.AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale), (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale), lastColor, active)
+	end
+end
+
+
 function Canvas:Redraw()
+	self.state.canvas.wnd:DestroyAllPixies()
 	-- Do analysis and render to active Pixies
+	self:Render()
 
 	-- Start Canvas Redraw
-	--Apollo.CreateTimer(self.state.timerId, PlotRefresh, false)
-	--Apollo.StartTimer(self.state.timerId)
+	Apollo.CreateTimer(self.state.timer.id, 0.001, false)
+	Apollo.StartTimer(self.state.timer.id)
 end
 
 function Canvas:RedrawTimer()
 	-- if not at the end then do this
-	Apollo.CreateTimer(self.state.timerId, PlotRefresh, false)
-	Apollo.StartTimer(self.state.timerId)
+  local totalPoints = #self.state.activePixies
+  if self.state.timer.counter < totalPoints then
+	    local max = self.state.timer.counter + self.state.timer.batchSize
+	    if max > totalPoints then
+	      max = totalPoints
+	    end
+	    for i=self.state.timer.counter, max do
+	      local t = self.state.activePixies[i]
+	      if t.active then
+	        pix = self.state.canvas.wnd:AddPixie(t.pixie)
+	        --table.insert(self.state.windows.plotter, pix)
+	      end
+	    end
+	    self.state.timer.counter = max + 1
+	    Apollo.CreateTimer(self.state.timer.id, self.state.timer.refresh, false)
+	    Apollo.StartTimer(self.state.timer.id)
+	  end
+	end
 end
 
 function Canvas:TestXCoord(x)
@@ -187,5 +313,10 @@ function Canvas:TestYCoord(y)
 	end
 end
 
+function Canvas:SetBatchSize(integer)
+end
+
+function Canvas:SetRedrawRefreshTimer(float)
+end
 
 Apollo.RegisterPackage(Seurat, PkgMajor, PkgMinor, {"SimpleUtils"})
