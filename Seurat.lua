@@ -37,8 +37,9 @@ local tCanvasDefaultState = {
 		width = 0,
 		height = 0
 	}
-	canvasBuffer = {},
-	activePixies = {}
+	activePixies = {},
+	redrawCounter = 0,
+	timerId = ""
 }
 
 ------------------------------------------------------------------------------------------------
@@ -99,8 +100,12 @@ function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
 			Print("Seurat WARNING: For large canvases, this can cause very poor performance and is not recommended.")
 		end
 	end
+
 	-- Initialize the buffer
 	self:ClearBuffer()
+	self.state.timerId = "Seraut_Canvas_" .. self.state.canvas.id
+	-- Setup Redraw Timer
+	Apollo.RegisterTimerHandler(self.state.timerId, "RedrawTimer", self)
 end
 
 function Canvas:Clear()
@@ -153,6 +158,17 @@ function Canvas:PlotVLine(x,y1,y2,color)
 end
 
 function Canvas:Redraw()
+	-- Do analysis and render to active Pixies
+
+	-- Start Canvas Redraw
+	--Apollo.CreateTimer(self.state.timerId, PlotRefresh, false)
+	--Apollo.StartTimer(self.state.timerId)
+end
+
+function Canvas:RedrawTimer()
+	-- if not at the end then do this
+	Apollo.CreateTimer(self.state.timerId, PlotRefresh, false)
+	Apollo.StartTimer(self.state.timerId)
 end
 
 function Canvas:TestXCoord(x)
