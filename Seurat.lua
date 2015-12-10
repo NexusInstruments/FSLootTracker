@@ -313,10 +313,12 @@ function Canvas:TestYCoord(y)
 	end
 end
 
-function Canvas:SetBatchSize(integer)
+function Canvas:SetBatchSize(size)
+	self.state.timer.batchSize = size
 end
 
-function Canvas:SetRedrawRefreshTimer(float)
+function Canvas:SetRedrawRefreshTimer(time)
+	self.state.timer.refresh = time
 end
 
 Apollo.RegisterPackage(Seurat, PkgMajor, PkgMinor, {"SimpleUtils"})
