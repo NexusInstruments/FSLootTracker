@@ -52,9 +52,23 @@ local tCanvasDefaultState = {
 function Seurat:CreateCanvas(canvasId, canvasWnd, scale, quiet)
 	local c = Canvas:new()
 	c:Init(canvasId, wnd, scale, quietMode)
+	if not self.canvases then
+		self.canvases = {}
+	end
+	self.canvases[canvasId] = c
 	return c
 end
 
+function Seurat:GetCanvas(canvasId)
+	return self.canvases[canvasId]
+end
+
+function Seurat:DestroyCanvas(canvasId)
+	if self.canvases[canvasId] then
+		self.canvases[canvasId]:Destroy()
+		self.canvases[canvasId] = nil
+	end
+end
 
 ------------------------------------------------------------------------------------------------
 --  Canvas Functionality
@@ -140,6 +154,7 @@ function Canvas:PlotPoint(x,y,color)
 end
 
 function Canvas:PlotHLine(x1,x2,y,color)
+	x1,x2 = math.minswap(x1,x2)
 	x1 = Canvas:TestXCoord(x1)
 	x2 = Canvas:TestXCoord(x2)
 	y = Canvas:TestYCoord(y)
@@ -151,6 +166,7 @@ function Canvas:PlotHLine(x1,x2,y,color)
 end
 
 function Canvas:PlotVLine(x,y1,y2,color)
+	y1,y2 = math.minswap(y1,y2)
 	x = Canvas:TestXCoord(x)
 	y1 = Canvas:TestXCoord(y1)
 	y2 = Canvas:TestYCoord(y2)
@@ -161,6 +177,126 @@ function Canvas:PlotVLine(x,y1,y2,color)
 	end
 end
 
+function Canvas:PlotLine(x1,y1,x2,y2,color)
+	rlocal y = y1
+	local dx = x2-x1
+	local dy = y2-y1
+	local m = dy / dx
+	for c=x1,x2 do
+		self:PlotPoint(c,math.round(y),color)
+		y = y + m
+	end
+end
+
+function Canvas:PlotRectFilled(x1,y1,x2,y2,color)
+	y1,y2 = math.minswap(y1,y2)
+	for c=y1,y2 do
+		self:PlotHLine(x1, x2, c, color)
+	end
+end
+
+function Canvas:PlotRect(x1,y1,x2,y2,color)
+	self:PlotHLine(x1, x2, y1, color)
+	self:PlotHLine(x1, x2, y2, color)
+	self:PlotVLine(x1, y1, y2, color)
+	self:PlotVLine(x2, y1, y2, color)
+end
+
+function Canvas:PlotCircleFilled(xc,yc,r,color)
+	local xn, yn, rs, ys
+	local xb, xe, yb, ye
+
+	rs = r ^ 2
+	for yn=r,0 do
+		yb = -yn + yc
+		ye = yn + yc
+		ys = yn ^ 2
+		xn = math.round(math.sqrt(rs - ys))
+		xb = -xn + xc
+		xe = xn + xc
+		self:PlotHLine(xb, xe, yb, color)
+	end
+	self:PlotHLine(-r+xc, r+xc, yc, color)
+end
+
+function Canvas:PlotCircle(x,y,r,color)
+	local xn, yn, rs, ys
+	local xb, xe, yb, ye
+	local lastx = 0
+
+	rs = r ^ 2
+	for yn=r,0 do
+		yb = -yn + yc
+		ye = yn + yc
+		ys = yn ^ 2
+		xn = math.round(math.sqrt(rs - ys))
+		if lastx > xn then
+			lastx = xn
+		end
+		for c=lastx,xn do
+			self:PlotPoint(c + xc, yb, color)
+			self:PlotPoint(-c + xc, ye, color)
+		end
+		lastx = xn + 1
+	end
+	self:PlotPoint(-r + xc, yc, color)
+	self:PlotPoint(r + xc, yc, color)
+end
+
+function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
+	local m1, m2, m3, dx, dy
+	local xb, xe
+	x1,y1,x2,y2 = math.pointswap(x1,y1,x2,y2)
+	x1,y1,x3,y3 = math.pointswap(x1,y1,x3,y3)
+	x2,y2,x3,y3 = math.pointswap(x2,y2,x3,y3)
+
+	dy = y2 - y1
+	dx = x2 - x1
+	if dy == 0 then
+		m1 = 0
+	else
+		m1 = dy / dx
+	end
+
+	dy = y3 - y1
+	dx = x3 - x1
+	if dy == 0 then
+		m2 = 0
+	else
+		m2 = dy / dx
+	end
+
+	dy = y3 - y2
+	dx = x3 - x2
+	if dy == 0 then
+		m3 = 0
+	else
+		m3 = dy / dx
+	end
+
+	xb = x1
+	xe = x1
+	for y=y1,y2 do
+		self:PlotHLine(xb, xe, y, color)
+		xb = xb + m1
+		xe = xe + m2
+	end
+	for y=y2,y3 do
+		self:PlotHLine(xb, xe, y, color)
+		xb = xb + m3
+		xe = xe + m2
+	end
+end
+
+function Canvas:PlotTri(x1,y1,x2,y2,x3,y3,color)
+	self:PlotLine(x1,y1,x2,y2,color)
+	self:PlotLine(x1,y1,x3,y3,color)
+	self:PlotLine(x2,y2,x3,y3,color)
+end
+
+--------------------------------------------------------------------------------
+--- Rendering Methods
+--------------------------------------------------------------------------------
 function Canvas:GetHPixieCount()
 	local count
 	for y=0,self.state.buffer.height do
@@ -319,6 +455,39 @@ end
 
 function Canvas:SetRedrawRefreshTimer(time)
 	self.state.timer.refresh = time
+end
+
+function Canvas:Destroy()
+	self.state.canvas.wnd:DestroyAllPixies()
+	self.state.activePixies = {}
+	self.state.buffer.data = {}
+	self = nil
+end
+
+------------------------------------------------------------------------------------------------
+--- Math Utilites
+------------------------------------------------------------------------------------------------
+function math.minswap(a,b)
+	if (a >= b) then
+		return b,a
+	else
+		return a,b
+	end
+end
+
+function math.maxswap(a,b)
+	if (a >= b) then
+		return a,b
+	else
+		return b,a
+	end
+end
+
+function math.pointswap(x1,y1,x2,y2)
+	if y1 > y2 then
+		return x2,y2,x1,y1
+	end
+	return x1,y1,x2,y2
 end
 
 Apollo.RegisterPackage(Seurat, PkgMajor, PkgMinor, {"SimpleUtils"})
