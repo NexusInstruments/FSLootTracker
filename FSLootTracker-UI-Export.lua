@@ -38,6 +38,13 @@ function FSLootTracker:RebuildExportList()
   end
 end
 
+function FSLootTracker:StripCharacters(str)
+  local s = string.gsub(str,"-","")
+  s = string.gsub(s," ","-")
+  s = string.gsub(s, "'","")
+  s = string.gsub(s, "\"","")
+  return s
+end
 ---------------------------------------------------------------------------------------------------
 -- ExportWindow Functions
 ---------------------------------------------------------------------------------------------------

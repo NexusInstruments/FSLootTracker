@@ -29,6 +29,7 @@ local FSLootTracker = {}
 local Utils = Apollo.GetPackage("SimpleUtils").tPackage
 local Chronology = Apollo.GetPackage("Chronology").tPackage
 local Cache = Apollo.GetPackage("SimpleCache").tPackage
+local Seurat = Apollo.GetPackage("Seurat").tPackage
 
 local Major, Minor, Patch, Suffix = 2, 2, 2, 0  -- TODO: Change to 3.0.0.0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
@@ -72,7 +73,7 @@ local tDefaultSettings = {
   },
   positions = {
     main = nil,
-    moneyLog = nil
+    MoneyLog = nil
   },
   options = {
     persistSession = true,
@@ -130,7 +131,7 @@ local tDefaultState = {
     moneyWindows = {},     	-- keep track of all the looted money windows
     ignoredItems = {},
     watchedItems = {},
-    moneyLog = nil,
+    MoneyLog = nil,
     tracker = nil,
     trackerObjectiveList = nil,
     trackerObjectiveWindows = {}     	-- keep track of all the looted money windows
@@ -591,8 +592,8 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.ItemWindow = self.state.windows.main:FindChild("ItemWindow")
     self.state.windows.ItemList = self.state.windows.ItemWindow:FindChild("ItemList")
     self.state.windows.MoneyWindow = self.state.windows.main:FindChild("MoneyWindow")
-    self.state.windows.moneyLog = self.state.windows.main:FindChild("MoneyLogWindow")
-    self.state.windows.MoneyList = self.state.windows.moneyLog:FindChild("MoneyList")
+    self.state.windows.MoneyLog = self.state.windows.main:FindChild("MoneyLogWindow")
+    self.state.windows.MoneyList = self.state.windows.MoneyLog:FindChild("MoneyList")
     self.state.windows.MoneyGraph = self.state.windows.MoneyWindow:FindChild("MoneyGraph")
 
     self.state.windows.JunkCash = self.state.windows.MoneyWindow:FindChild("JunkValue"):FindChild("CashDisplay")
@@ -653,7 +654,7 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.contextFlyoutMarkAs = self.state.windows.contextFlyout:FindChild("MarkButtons")
 
     self.state.windows.main:Show(false, true)
-    self.state.windows.moneyLog:Show(false)
+    self.state.windows.MoneyLog:Show(false)
     self.state.windows.Sessions:Show(false)
     self.state.windows.ProcessingIndicator:Show(false)
 
@@ -678,6 +679,8 @@ function FSLootTracker:OnDocLoaded()
     -- Do additional Addon initialization here
     Apollo.RegisterEventHandler("ObjectiveTrackerLoaded", "OnObjectiveTrackerLoaded", self)
     Event_FireGenericEvent("ObjectiveTracker_RequestParent")
+
+    self.state.canvas = Seurat:CreateCanvas("MoneyGraph", self.state.windows.MoneyGraph, 3, false)
   end
 end
 
@@ -775,14 +778,6 @@ function FSLootTracker:DestroyItemList()
   end
 
   self.state.windows.selectedItem = nil
-end
-
-function FSLootTracker:StripCharacters(str)
-  local s = string.gsub(str,"-","")
-  s = string.gsub(s," ","-")
-  s = string.gsub(s, "'","")
-  s = string.gsub(s, "\"","")
-  return s
 end
 
 -----------------------------------------------------------------------------------------------
