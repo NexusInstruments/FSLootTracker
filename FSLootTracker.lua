@@ -7,11 +7,11 @@
 --	https://github.com/chronosis/FSLootTracker
 ------------------------------------------------------------------------------------------------
 -- TODO: Rebuild Item Cache from Ignore and Watch Lists as well
--- TODO: Pixie Plot of statistics over time and Move current view into a "Money Log" View
--- TODO: Implement Export formats (HTML, CSV, XML-CTLootTracker-EQDKP)
+-- TODO: Plot of statistics over time and Move current view into a "Money Log" View
 -- TODO: Add Purpose column and Mark As > Costume/Salvage/Bank/Loot option (default Loot)
 -- TODO: Capture and Display Socket Types on the item Drop
 -- TODO: Track Boss Kills and attendance in raid at the moment of the kill and raid leave/join/offline/afk events
+-- TODO: Implement Export formats (XML-CTLootTracker-EQDKP)
 -- TODO: Save, View, Restore Sessions (Can't Delete Active Session)
 -- TODO: Add options to assign a source (kill)
 -- TODO: Tag Master Loot elligible items with the boss that thing that was just killed.
@@ -71,7 +71,8 @@ local tDefaultSettings = {
     watched = {}          -- keep track of items that should be alerted
   },
   positions = {
-    main = nil
+    main = nil,
+    moneyLog = nil
   },
   options = {
     persistSession = true,
@@ -107,6 +108,7 @@ local tDefaultSettings = {
 
 local tDefaultState = {
   isOpen = false,           -- current window state
+  isMoneyLogOpen = false,
   closeOptionDropdown = true,
   lastSource = "Unknown",   -- last loot source
   updateCount = 0,
@@ -128,6 +130,7 @@ local tDefaultState = {
     moneyWindows = {},     	-- keep track of all the looted money windows
     ignoredItems = {},
     watchedItems = {},
+    moneyLog = nil,
     tracker = nil,
     trackerObjectiveList = nil,
     trackerObjectiveWindows = {}     	-- keep track of all the looted money windows
@@ -186,6 +189,12 @@ local tDefaultState = {
       largest = 0
     },
     [Money.CodeEnumCurrencyType.ShadeSilver] = {
+      total = 0,
+      perHour = 0,
+      average = 0,
+      largest = 0
+    },
+    [Money.CodeEnumCurrencyType.ProtoCoins] = {
       total = 0,
       perHour = 0,
       average = 0,
@@ -579,11 +588,13 @@ function FSLootTracker:OnDocLoaded()
     end
 
     -- item list
-    self.state.windows.ItemList = self.state.windows.main:FindChild("ItemList")
     self.state.windows.ItemWindow = self.state.windows.main:FindChild("ItemWindow")
     self.state.windows.ItemList = self.state.windows.ItemWindow:FindChild("ItemList")
     self.state.windows.MoneyWindow = self.state.windows.main:FindChild("MoneyWindow")
-    self.state.windows.MoneyList = self.state.windows.MoneyWindow:FindChild("MoneyList")
+    self.state.windows.moneyLog = self.state.windows.main:FindChild("MoneyLogWindow")
+    self.state.windows.MoneyList = self.state.windows.moneyLog:FindChild("MoneyList")
+    self.state.windows.MoneyGraph = self.state.windows.MoneyWindow:FindChild("MoneyGraph")
+
     self.state.windows.JunkCash = self.state.windows.MoneyWindow:FindChild("JunkValue"):FindChild("CashDisplay")
 
     self.state.windows.TotalCash = self.state.windows.MoneyWindow:FindChild("TotalMoney"):FindChild("CashDisplay")
@@ -631,17 +642,22 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.MostPrestige = self.state.windows.MoneyWindow:FindChild("LargestLoot"):FindChild("PSDisplay")
     self.state.windows.MostPrestige:SetMoneySystem(Money.CodeEnumCurrencyType.Prestige)
 
+    self.state.windows.TotalOmni = self.state.windows.MoneyWindow:FindChild("TotalMoney"):FindChild("OmniDisplay")
+    self.state.windows.TotalOmni:SetMoneySystem(Money.CodeEnumCurrencyType.GroupCurrency, 0, 0, AccountItemLib.CodeEnumAccountCurrency.Omnibits)
+    self.state.windows.PerHourOmni = self.state.windows.MoneyWindow:FindChild("MoneyPerHour"):FindChild("OmniDisplay")
+    self.state.windows.PerHourOmni:SetMoneySystem(Money.CodeEnumCurrencyType.GroupCurrency, 0, 0, AccountItemLib.CodeEnumAccountCurrency.Omnibits)
+
     self.state.windows.ProcessingIndicator = self.state.windows.main:FindChild("ProcessingIndicator")
     self.state.windows.Sessions = self.state.windows.main:FindChild("SessionsForm")
     self.state.windows.contextFlyout = self.state.windows.main:FindChild("ContextFlyout")
     self.state.windows.contextFlyoutMarkAs = self.state.windows.contextFlyout:FindChild("MarkButtons")
 
     self.state.windows.main:Show(false, true)
+    self.state.windows.moneyLog:Show(false)
     self.state.windows.Sessions:Show(false)
     self.state.windows.ProcessingIndicator:Show(false)
 
-    self.state.windows.ItemList:Show(true)
-    self.state.windows.MoneyWindow:Show(true)
+    self.state.windows.ItemWindow:Show(true)
     self.state.windows.MoneyWindow:Show(false)
     self.state.windows.main:FindChild("HeaderButtons"):FindChild("SplashItemsBtn"):SetCheck(true)
 
