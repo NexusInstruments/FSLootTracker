@@ -51,7 +51,7 @@ local tCanvasDefaultState = {
 ------------------------------------------------------------------------------------------------
 function Seurat:CreateCanvas(canvasId, canvasWnd, scale, quiet)
 	local c = Canvas:new()
-	c:Init(canvasId, wnd, scale, quietMode)
+	c:Init(canvasId, canvasWnd, scale, quietMode)
 	if not self.canvases then
 		self.canvases = {}
 	end
@@ -296,7 +296,7 @@ end
 --- Rendering Methods
 --------------------------------------------------------------------------------
 function Canvas:GetHPixieCount()
-	local count
+	local count = 0
 	for y=0,self.state.buffer.height do
 		local lastColor = ""
 		for x=0,self.state.buffer.width do
@@ -311,7 +311,7 @@ function Canvas:GetHPixieCount()
 end
 
 function Canvas:GetVPixieCount()
-	local count
+	local count = 0
 	for x=0,self.state.buffer.width do
 		local lastColor = ""
 		for y=0,self.state.buffer.height do
