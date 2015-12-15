@@ -580,6 +580,8 @@ function FSLootTracker:OnDocLoaded()
 
     -- item list
     self.state.windows.ItemList = self.state.windows.main:FindChild("ItemList")
+    self.state.windows.ItemWindow = self.state.windows.main:FindChild("ItemWindow")
+    self.state.windows.ItemList = self.state.windows.ItemWindow:FindChild("ItemList")
     self.state.windows.MoneyWindow = self.state.windows.main:FindChild("MoneyWindow")
     self.state.windows.MoneyList = self.state.windows.MoneyWindow:FindChild("MoneyList")
     self.state.windows.JunkCash = self.state.windows.MoneyWindow:FindChild("JunkValue"):FindChild("CashDisplay")

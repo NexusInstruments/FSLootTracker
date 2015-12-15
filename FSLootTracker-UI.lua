@@ -38,23 +38,19 @@ end
 -- FSLootTracker Main Form -- Tabs
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnSplashItemsCheck( wndHandler, wndControl, eMouseButton )
-  wnd = wndHandler:GetParent():GetParent():FindChild("ItemList")
-  wnd:Show(true)
+  self.state.windows.ItemWindow:Show(true)
 end
 
 function FSLootTracker:OnSplashItemsUncheck( wndHandler, wndControl, eMouseButton )
-  wnd = wndHandler:GetParent():GetParent():FindChild("ItemList")
-  wnd:Show(false)
+  self.state.windows.ItemWindow:Show(false)
 end
 
 function FSLootTracker:OnSplashMoneyCheck( wndHandler, wndControl, eMouseButton )
-  wnd = wndHandler:GetParent():GetParent():FindChild("MoneyWindow")
-  wnd:Show(true)
+  self.state.windows.MoneyWindow:Show(true)
 end
 
 function FSLootTracker:OnSplashMoneyUncheck( wndHandler, wndControl, eMouseButton )
-  wnd = wndHandler:GetParent():GetParent():FindChild("MoneyWindow")
-  wnd:Show(false)
+  self.state.windows.MoneyWindow:Show(false)
 end
 
 ---------------------------------------------------------------------------------------------------
