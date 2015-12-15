@@ -1158,10 +1158,6 @@ function FSLootTracker:OnChannelUpdate_Loot(eType, tEventArgs)
   end
 end
 
-function FSLootTracker:OnRecordingButtonPressed( wndHandler, wndControl, eMouseButton )
-  --Event_FireGenericEvent("QuestTrackedChanged", self.questTrack, true)
-end
-
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker Instance
 -----------------------------------------------------------------------------------------------

@@ -112,6 +112,11 @@ end
 function FSLootTracker:SaveMoneyLogLocation()
   self.settings.positions.moneyLog = self.state.windows.moneyLog:GetLocation():ToTable()
 end
+
+function FSLootTracker:OnRecordingButtonPressed( wndHandler, wndControl, eMouseButton )
+  -- TODO: ADD FUNCTIONALITY FOR PAUSING TRACKING
+end
+
 ---------------------------------------------------------------------------------------------------
 -- FSLootTracker UI Refresh
 ---------------------------------------------------------------------------------------------------
