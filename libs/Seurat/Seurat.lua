@@ -121,7 +121,7 @@ function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
 
 	-- Initialize the buffer
 	self:ClearBuffer()
-	self.state.timer.id = "Seraut_Canvas_" .. self.state.canvas.id
+	self.state.timer.id = "Seurat_Canvas_" .. self.state.canvas.id
 	-- Setup Redraw Timer
 	Apollo.RegisterTimerHandler(self.state.timer.id, "RedrawTimer", self)
 end
@@ -298,12 +298,13 @@ end
 function Canvas:GetHPixieCount()
 	local count = 0
 	for y=0,self.state.buffer.height do
-		local lastColor = ""
+		local lastColor = -1
 		for x=0,self.state.buffer.width do
 			local loc = y * self.state.buffer.width + x
 			local color = self.state.buffer.data[loc + 1]
 			if lastColor ~= color then
 				count = count + 1
+				lastColor = color
 			end
 		end
 	end
@@ -313,12 +314,13 @@ end
 function Canvas:GetVPixieCount()
 	local count = 0
 	for x=0,self.state.buffer.width do
-		local lastColor = ""
+		local lastColor = -1
 		for y=0,self.state.buffer.height do
 			local loc = y * self.state.buffer.width + x
 			local color = self.state.buffer.data[loc + 1]
 			if lastColor ~= color then
 				count = count + 1
+				lastColor = color
 			end
 		end
 	end
@@ -355,7 +357,7 @@ end
 function Canvas:RenderH()
 	local active = true
 	for y=0,self.state.buffer.height do
-		local lastColor = ""
+		local lastColor = -1
 		local currentPixieX = nil
 		for x=0,self.state.buffer.width do
 			local loc = y * self.state.buffer.width + x
@@ -365,20 +367,25 @@ function Canvas:RenderH()
 				if currentPixieX then
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
-					self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+          if lastColor ~= -1 then
+						self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+					end
+					lastColor = color
 				end
 				currentPixieX = x
 			end
 		end
 		-- end last pixie and insert
-		self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, self.state.buffer.width * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+    if lastColor ~= -1 then
+			self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, self.state.buffer.width * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+		end
 	end
 end
 
 function Canvas:RenderV()
 	local active = true
 	for x=0,self.state.buffer.width do
-		local lastColor = ""
+		local lastColor = -1
 		local currentPixieY = nil
 		for y=0,self.state.buffer.height do
 			local loc = y * self.state.buffer.width + x
@@ -388,19 +395,25 @@ function Canvas:RenderV()
 				if currentPixieY then
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
-					self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
+          if lastColor ~= -1 then
+						self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
+					end
+					lastColor = color
 				end
 				currentPixieY = y
 			end
 		end
 		-- end last pixie and insert
-		self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale, lastColor, active)
+    if lastColor ~= -1 then
+			self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale, lastColor, active)
+		end
 	end
 end
 
 
 function Canvas:Redraw()
 	self.state.canvas.wnd:DestroyAllPixies()
+	self.state.timer.counter = 0
 	-- Do analysis and render to active Pixies
 	self:Render()
 
