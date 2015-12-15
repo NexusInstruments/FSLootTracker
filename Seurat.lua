@@ -344,7 +344,7 @@ function Canvas:AddPixie(x1,y1,x2,y2,color,active)
 		active = active,
 		pixie = {
 			strSprite = "WhiteFill",
-			cr = lastColor,
+			cr = color,
 			loc = {
 				fPoints = topleft,
 				nOffsets = {x1, y1, x2, y2}
