@@ -13,26 +13,28 @@ function FSLootTracker:RebuildExportList()
   self.state.listItems.itemsExport = {}
   for idx, itemInstance in ipairs(self.state.listItems.items) do
     local item = self.state.cache.ItemCache:GetValue(itemInstance.itemID)
-    local itemName = item.name
+    if item then
+      local itemName = item.name
 
-    local jabbitLink = "http://www.jabbithole.com/items/" .. self:StripCharacters(itemName) .. "-" .. tostring(itemInstance.itemID)
+      local jabbitLink = "http://www.jabbithole.com/items/" .. self:StripCharacters(itemName) .. "-" .. tostring(itemInstance.itemID)
 
-    local tNewEntry =
-    {
-      itemID = itemInstance.itemID,
-      itemName = itemName,
-      itemQuality = itemInstance.quality,
-      itemILvl = item.iLvl,
-      itemType = item.type,
-      count = itemInstance.count,
-      looter = self.state.cache.LooterCache:GetKeyFromValue(itemInstance.looter),
-      source = self.state.cache.SourceCache:GetKeyFromValue(itemInstance.source),
-      cost = itemInstance.cost,
-      gameTimeAdded = itemInstance.timeAdded,
-      timeReported = itemInstance.timeReported,
-      jabbitLink = jabbitLink
-    }
-    table.insert(self.state.listItems.itemsExport, tNewEntry)
+      local tNewEntry =
+      {
+        itemID = itemInstance.itemID,
+        itemName = itemName,
+        itemQuality = itemInstance.quality,
+        itemILvl = item.iLvl,
+        itemType = item.type,
+        count = itemInstance.count,
+        looter = self.state.cache.LooterCache:GetKeyFromValue(itemInstance.looter),
+        source = self.state.cache.SourceCache:GetKeyFromValue(itemInstance.source),
+        cost = itemInstance.cost,
+        gameTimeAdded = itemInstance.timeAdded,
+        timeReported = itemInstance.timeReported,
+        jabbitLink = jabbitLink
+      }
+      table.insert(self.state.listItems.itemsExport, tNewEntry)
+    end
   end
 end
 
