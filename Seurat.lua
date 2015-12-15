@@ -31,18 +31,18 @@ local tCanvasDefaultState = {
 		scale = 1,
 		width = 0,
 		height = 0
-	}
+	},
 	buffer = {
 		data = {},
 		width = 0,
 		height = 0
-	}
+	},
 	timer = {
 		id = "",
 		counter = 0,
 		batchSize = 400,
 		refresh = 0.01
-	}
+	},
 	activePixies = {},
 }
 
@@ -85,7 +85,7 @@ end
 -- Initialize
 function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
   -- Volatile values are stored here. These are impermenant and not saved between sessions
-  self.state = deepcopy(tDefaultState)
+  self.state = deepcopy(tCanvasDefaultState)
 	if not canvasId then
 		Print("Seurat ERROR: Seurat Canvas MUST be initialized with a Canvas ID")
 		return
@@ -147,38 +147,36 @@ function Canvas:SetBGColor()
 end
 
 function Canvas:PlotPoint(x,y,color)
-	x = Canvas:TestXCoord(x)
-	y = Canvas:TestYCoord(y)
+	x = self:TestXCoord(x)
+	y = self:TestYCoord(y)
 	local loc = y * self.state.buffer.width + x
 	self.state.buffer.data[loc + 1] = color
 end
 
 function Canvas:PlotHLine(x1,x2,y,color)
 	x1,x2 = math.minswap(x1,x2)
-	x1 = Canvas:TestXCoord(x1)
-	x2 = Canvas:TestXCoord(x2)
-	y = Canvas:TestYCoord(y)
+	x1 = self:TestXCoord(x1)
+	x2 = self:TestXCoord(x2)
+	y = self:TestYCoord(y)
 	for i=x1,x2 do
 		local loc =  y * self.state.buffer.width + i
-			self.state.buffer.data[loc + 1] = color
-		end
+		self.state.buffer.data[loc + 1] = color
 	end
 end
 
 function Canvas:PlotVLine(x,y1,y2,color)
 	y1,y2 = math.minswap(y1,y2)
-	x = Canvas:TestXCoord(x)
-	y1 = Canvas:TestXCoord(y1)
-	y2 = Canvas:TestYCoord(y2)
+	x = self:TestXCoord(x)
+	y1 = self:TestXCoord(y1)
+	y2 = self:TestYCoord(y2)
 	for i=y1,y2 do
 		local loc = i * self.state.buffer.width + x
-			self.state.buffer.data[loc + 1] = color
-		end
+		self.state.buffer.data[loc + 1] = color
 	end
 end
 
 function Canvas:PlotLine(x1,y1,x2,y2,color)
-	rlocal y = y1
+	local y = y1
 	local dx = x2-x1
 	local dy = y2-y1
 	local m = dy / dx
@@ -344,7 +342,7 @@ function Canvas:AddPixie(x1,y1,x2,y2,color,active)
 		active = active,
 		pixie = {
 			strSprite = "WhiteFill",
-			cr = lastColor
+			cr = lastColor,
 			loc = {
 				fPoints = topleft,
 				nOffsets = {x1, y1, x2, y2}
@@ -396,7 +394,7 @@ function Canvas:RenderV()
 			end
 		end
 		-- end last pixie and insert
-		self.AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale), (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale), lastColor, active)
+		self.AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale, lastColor, active)
 	end
 end
 
@@ -415,38 +413,39 @@ function Canvas:RedrawTimer()
 	-- if not at the end then do this
   local totalPoints = #self.state.activePixies
   if self.state.timer.counter < totalPoints then
-	    local max = self.state.timer.counter + self.state.timer.batchSize
-	    if max > totalPoints then
-	      max = totalPoints
-	    end
-	    for i=self.state.timer.counter, max do
-	      local t = self.state.activePixies[i]
-	      if t.active then
-	        pix = self.state.canvas.wnd:AddPixie(t.pixie)
-	        --table.insert(self.state.windows.plotter, pix)
-	      end
-	    end
-	    self.state.timer.counter = max + 1
-	    Apollo.CreateTimer(self.state.timer.id, self.state.timer.refresh, false)
-	    Apollo.StartTimer(self.state.timer.id)
-	  end
+    local max = self.state.timer.counter + self.state.timer.batchSize
+    if max > totalPoints then
+      max = totalPoints
+    end
+    for i=self.state.timer.counter, max do
+      local t = self.state.activePixies[i]
+      if t.active then
+        pix = self.state.canvas.wnd:AddPixie(t.pixie)
+        --table.insert(self.state.windows.plotter, pix)
+      end
+    end
+    self.state.timer.counter = max + 1
+    Apollo.CreateTimer(self.state.timer.id, self.state.timer.refresh, false)
+    Apollo.StartTimer(self.state.timer.id)
 	end
 end
 
 function Canvas:TestXCoord(x)
 	if x > self.state.buffer.width then
 		x = self.state.buffer.width
-	else if x < 0 then
+	elseif x < 0 then
 		x = 0
 	end
+	return x
 end
 
 function Canvas:TestYCoord(y)
 	if y > self.state.buffer.height then
 		y = self.state.buffer.height
-	else if y < 0 then
+	elseif y < 0 then
 		y = 0
 	end
+	return y
 end
 
 function Canvas:SetBatchSize(size)
@@ -488,6 +487,16 @@ function math.pointswap(x1,y1,x2,y2)
 		return x2,y2,x1,y1
 	end
 	return x1,y1,x2,y2
+end
+
+function math.round(f)
+	local g = math.floor(f)
+	local r = f - g
+	if r >= 0.5 then
+		return math.ceil(f)
+	else
+		return math.floor(f)
+	end
 end
 
 Apollo.RegisterPackage(Seurat, PkgMajor, PkgMinor, {"SimpleUtils"})
