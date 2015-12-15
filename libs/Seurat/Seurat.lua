@@ -365,13 +365,13 @@ function Canvas:RenderH()
 				if currentPixieX then
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
-					self.AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+					self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
 				end
 				currentPixieX = x
 			end
 		end
 		-- end last pixie and insert
-		self.AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, self.state.buffer.width * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
+		self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, self.state.buffer.width * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
 	end
 end
 
@@ -388,13 +388,13 @@ function Canvas:RenderV()
 				if currentPixieY then
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
-					self.AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
+					self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
 				end
 				currentPixieY = y
 			end
 		end
 		-- end last pixie and insert
-		self.AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale, lastColor, active)
+		self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, self.state.canvas.height * self.state.canvas.scale, lastColor, active)
 	end
 end
 
