@@ -121,7 +121,7 @@ function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
 
 	-- Initialize the buffer
 	self:ClearBuffer()
-	self.state.timer.id = "Seraut_Canvas_" .. self.state.canvas.id
+	self.state.timer.id = "Seurat_Canvas_" .. self.state.canvas.id
 	-- Setup Redraw Timer
 	Apollo.RegisterTimerHandler(self.state.timer.id, "RedrawTimer", self)
 end
