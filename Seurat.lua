@@ -51,7 +51,7 @@ local tCanvasDefaultState = {
 ------------------------------------------------------------------------------------------------
 function Seurat:CreateCanvas(canvasId, canvasWnd, scale, quiet)
 	local c = Canvas:new()
-	c:Init(canvasId, wnd, scale, quietMode)
+	c:Init(canvasId, canvasWnd, scale, quietMode)
 	if not self.canvases then
 		self.canvases = {}
 	end
