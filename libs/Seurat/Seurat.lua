@@ -343,12 +343,17 @@ function Canvas:AddPixie(x1,y1,x2,y2,color,active)
 	local t = {
 		active = active,
 		pixie = {
+      bLine = false,
 			strSprite = "WhiteFill",
-			cr = lastColor,
-			loc = {
+			cr = color,
+		  loc = {
 				fPoints = topleft,
 				nOffsets = {x1, y1, x2, y2}
-			}
+			},
+      flagsText = {
+  			DT_VCENTER = true
+  		},
+  		fRotation = 0
 		}
 	}
 	table.insert(self.state.activePixies, t)
@@ -370,8 +375,8 @@ function Canvas:RenderH()
           if lastColor ~= -1 then
 						self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
 					end
-					lastColor = color
 				end
+				lastColor = color
 				currentPixieX = x
 			end
 		end
@@ -398,8 +403,8 @@ function Canvas:RenderV()
           if lastColor ~= -1 then
 						self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
 					end
-					lastColor = color
 				end
+				lastColor = color
 				currentPixieY = y
 			end
 		end
@@ -413,7 +418,7 @@ end
 
 function Canvas:Redraw()
 	self.state.canvas.wnd:DestroyAllPixies()
-	self.state.timer.counter = 0
+	self.state.timer.counter = 1
 	-- Do analysis and render to active Pixies
 	self:Render()
 
