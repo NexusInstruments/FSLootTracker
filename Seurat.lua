@@ -343,12 +343,17 @@ function Canvas:AddPixie(x1,y1,x2,y2,color,active)
 	local t = {
 		active = active,
 		pixie = {
+      bLine = false,
 			strSprite = "WhiteFill",
 			cr = color,
-			loc = {
+		  loc = {
 				fPoints = topleft,
 				nOffsets = {x1, y1, x2, y2}
-			}
+			},
+      flagsText = {
+  			DT_VCENTER = true
+  		},
+  		fRotation = 0
 		}
 	}
 	table.insert(self.state.activePixies, t)
