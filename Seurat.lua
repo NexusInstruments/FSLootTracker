@@ -370,8 +370,8 @@ function Canvas:RenderH()
           if lastColor ~= -1 then
 						self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
 					end
-					lastColor = color
 				end
+				lastColor = color
 				currentPixieX = x
 			end
 		end
@@ -398,8 +398,8 @@ function Canvas:RenderV()
           if lastColor ~= -1 then
 						self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
 					end
-					lastColor = color
 				end
+				lastColor = color
 				currentPixieY = y
 			end
 		end
