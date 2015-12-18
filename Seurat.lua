@@ -413,7 +413,7 @@ end
 
 function Canvas:Redraw()
 	self.state.canvas.wnd:DestroyAllPixies()
-	self.state.timer.counter = 0
+	self.state.timer.counter = 1
 	-- Do analysis and render to active Pixies
 	self:Render()
 
