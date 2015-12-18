@@ -73,7 +73,7 @@ local tDefaultSettings = {
   },
   positions = {
     main = nil,
-    MoneyLog = nil
+    moneyLog = nil
   },
   options = {
     persistSession = true,
@@ -131,7 +131,7 @@ local tDefaultState = {
     moneyWindows = {},     	-- keep track of all the looted money windows
     ignoredItems = {},
     watchedItems = {},
-    MoneyLog = nil,
+    moneyLog = nil,
     tracker = nil,
     trackerObjectiveList = nil,
     trackerObjectiveWindows = {}     	-- keep track of all the looted money windows
@@ -592,8 +592,8 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.ItemWindow = self.state.windows.main:FindChild("ItemWindow")
     self.state.windows.ItemList = self.state.windows.ItemWindow:FindChild("ItemList")
     self.state.windows.MoneyWindow = self.state.windows.main:FindChild("MoneyWindow")
-    self.state.windows.MoneyLog = self.state.windows.main:FindChild("MoneyLogWindow")
-    self.state.windows.MoneyList = self.state.windows.MoneyLog:FindChild("MoneyList")
+    self.state.windows.moneyLog = self.state.windows.main:FindChild("MoneyLogWindow")
+    self.state.windows.MoneyList = self.state.windows.moneyLog:FindChild("MoneyList")
     self.state.windows.MoneyGraph = self.state.windows.MoneyWindow:FindChild("MoneyGraph")
 
     self.state.windows.JunkCash = self.state.windows.MoneyWindow:FindChild("JunkValue"):FindChild("CashDisplay")
@@ -654,7 +654,7 @@ function FSLootTracker:OnDocLoaded()
     self.state.windows.contextFlyoutMarkAs = self.state.windows.contextFlyout:FindChild("MarkButtons")
 
     self.state.windows.main:Show(false, true)
-    self.state.windows.MoneyLog:Show(false)
+    self.state.windows.moneyLog:Show(false)
     self.state.windows.Sessions:Show(false)
     self.state.windows.ProcessingIndicator:Show(false)
 

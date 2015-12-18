@@ -102,7 +102,7 @@ function FSLootTracker:OnShowMoneyLog( wndHandler, wndControl, eMouseButton )
   end
   if self.settings.positions.moneyLog then -- Only move if position exists
     locSavedLoc = WindowLocation.new(self.settings.positions.moneyLog)
-    self.state.windows.moneyLog:MoveToLocation(locSavedLoc)
+    --self.state.windows.moneyLog:MoveToLocation(locSavedLoc)
   end
   -- Rebuild List Optimization goes here
   self.state.windows.moneyLog:Show(true, true)
@@ -110,7 +110,7 @@ function FSLootTracker:OnShowMoneyLog( wndHandler, wndControl, eMouseButton )
 end
 
 function FSLootTracker:SaveMoneyLogLocation()
-  self.settings.positions.moneyLog = self.state.windows.moneyLog:GetLocation():ToTable()
+  --self.settings.positions.moneyLog = self.state.windows.moneyLog:GetLocation():ToTable()
 end
 
 function FSLootTracker:OnRecordingButtonPressed( wndHandler, wndControl, eMouseButton )
