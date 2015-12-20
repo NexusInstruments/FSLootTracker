@@ -147,32 +147,34 @@ function Canvas:SetBGColor()
 end
 
 function Canvas:PlotPoint(x,y,color)
-	x = self:TestXCoord(x)
-	y = self:TestYCoord(y)
-	local loc = y * self.state.buffer.width + x
-	self.state.buffer.data[loc + 1] = color
+  if self:CheckClipping(x,y) then
+    local loc = y * self.state.buffer.width + x
+  	self.state.buffer.data[loc + 1] = color
+  end
 end
 
 function Canvas:PlotHLine(x1,x2,y,color)
 	x1,x2 = math.minswap(x1,x2)
-	x1 = self:TestXCoord(x1)
-	x2 = self:TestXCoord(x2)
-	y = self:TestYCoord(y)
-	for i=x1,x2 do
-		local loc =  y * self.state.buffer.width + i
-		self.state.buffer.data[loc + 1] = color
-	end
+	x1 = self:BoundXToBuffer(x1)
+	x2 = self:BoundXToBuffer(x2)
+	if self:CheckClipping(x1,y) then
+    for i=x1,x2 do
+      local loc =  y * self.state.buffer.width + i
+      self.state.buffer.data[loc + 1] = color
+    end
+  end
 end
 
 function Canvas:PlotVLine(x,y1,y2,color)
 	y1,y2 = math.minswap(y1,y2)
-	x = self:TestXCoord(x)
-	y1 = self:TestXCoord(y1)
-	y2 = self:TestYCoord(y2)
-	for i=y1,y2 do
-		local loc = i * self.state.buffer.width + x
-		self.state.buffer.data[loc + 1] = color
-	end
+	y1 = self:BoundYToBuffer(y1)
+	y2 = self:BoundYToBuffer(y2)
+	if self:CheckClipping(x,y1) then
+    for i=y1,y2 do
+      local loc = i * self.state.buffer.width + x
+      self.state.buffer.data[loc + 1] = color
+    end
+  end
 end
 
 function Canvas:PlotLine(x1,y1,x2,y2,color)
@@ -233,12 +235,91 @@ function Canvas:PlotCircle(x,y,r,color)
 		end
 		for c=lastx,xn do
 			self:PlotPoint(c + xc, yb, color)
+			self:PlotPoint(-c + xc, yb, color)
+      self:PlotPoint(c + xc, ye, color)
 			self:PlotPoint(-c + xc, ye, color)
 		end
 		lastx = xn + 1
 	end
 	self:PlotPoint(-r + xc, yc, color)
 	self:PlotPoint(r + xc, yc, color)
+end
+
+function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
+	local xn, yn, rs, ys
+	local xb, xe, yb, ye
+
+  start,finish = math.minswap(start,finish)
+	rs = r ^ 2
+	for yn=r,0 do
+		yb = -yn + yc
+		ye = yn + yc
+		ys = yn ^ 2
+		xn = math.round(math.sqrt(rs - ys))
+		xb = -xn + xc
+		xe = xn + xc
+    for x=-xn,xn do
+      c1 = math.atan2(x,-yn) + math.pi
+      c2 = math.atan2(x,yn) + math.pi
+      if c1 >= start and c1 <= finish then
+        self:PlotPoint(x + xc, yb, color)
+      end
+      if c2 >= start and c2 <= finish then
+        self:PlotPoint(x + xc, ye, color)
+      end
+    end
+	end
+  for x=-r,r do
+    c = math.atan2(x,0) + math.pi
+    if c >= start and c <= finish then
+      self:PlotPoint(x,yc,color)
+    end
+  end
+end
+
+function Canvas:PlotCircleArc(x,y,r,color,start,finish)
+	local xn, yn, rs, ys
+	local xb, xe, yb, ye
+	local lastx = 0
+
+  start,finish = math.minswap(start,finish)
+	rs = r ^ 2
+	for yn=r,0 do
+		yb = -yn + yc
+		ye = yn + yc
+		ys = yn ^ 2
+		xn = math.round(math.sqrt(rs - ys))
+		if lastx > xn then
+			lastx = xn
+		end
+		for c=lastx,xn do
+      c1 = math.atan2(c,-yn) + math.pi
+      c2 = math.atan2(-c,-yn) + math.pi
+      c3 = math.atan2(c,yn) + math.pi
+      c4 = math.atan2(-c,yn) + math.pi
+      if c1 >= start and c1 <= finish then
+        self:PlotPoint(c + xc, yb, color)
+      end
+      if c2 >= start and c2 <= finish then
+        self:PlotPoint(-c + xc, yb, color)
+      end
+      if c3 >= start and c3 <= finish then
+        self:PlotPoint(c + xc, ye, color)
+      end
+      if c4 >= start and c4 <= finish then
+        self:PlotPoint(-c + xc, ye, color)
+      end
+		end
+		lastx = xn + 1
+	end
+  c1 = math.atan2(-r,0) + math.pi
+  c2 = math.atan2(r,0) + math.pi
+  if c1 >= start and c1 <= finish then
+    self:PlotPoint(-r + xc, yc, color)
+  end
+  if c2 >= start and c2 <= finish then
+    self:PlotPoint(r + xc, yc, color)
+  end
 end
 
 function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
@@ -448,6 +529,15 @@ function Canvas:RedrawTimer()
 	end
 end
 
+function Canvas:CheckClipping(x,y)
+  if x > self.state.buffer.width or x < 0 then
+		return false
+	elseif y > self.state.buffer.height or y < 0 then
+		return false
+	end
+	return true
+end
+
 function Canvas:TestXCoord(x)
 	if x > self.state.buffer.width then
 		x = self.state.buffer.width
@@ -458,6 +548,24 @@ function Canvas:TestXCoord(x)
 end
 
 function Canvas:TestYCoord(y)
+	if y > self.state.buffer.height then
+		y = self.state.buffer.height
+	elseif y < 0 then
+		y = 0
+	end
+	return y
+end
+
+function Canvas:BoundXToBuffer(x)
+	if x > self.state.buffer.width then
+		x = self.state.buffer.width
+	elseif x < 0 then
+		x = 0
+	end
+	return x
+end
+
+function Canvas:BoundYToBuffer(y)
 	if y > self.state.buffer.height then
 		y = self.state.buffer.height
 	elseif y < 0 then
