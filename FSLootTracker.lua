@@ -680,7 +680,7 @@ function FSLootTracker:OnDocLoaded()
     Apollo.RegisterEventHandler("ObjectiveTrackerLoaded", "OnObjectiveTrackerLoaded", self)
     Event_FireGenericEvent("ObjectiveTracker_RequestParent")
 
-    self.state.canvas = Seurat:CreateCanvas("MoneyGraph", self.state.windows.MoneyGraph, 3, false)
+    self.state.canvas = Seurat:CreateCanvas("MoneyGraph", self.state.windows.MoneyGraph, 2, false)
   end
 end
 
