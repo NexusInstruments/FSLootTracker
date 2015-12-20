@@ -219,7 +219,7 @@ function Canvas:PlotCircleFilled(xc,yc,r,color)
 	self:PlotHLine(-r+xc, r+xc, yc, color)
 end
 
-function Canvas:PlotCircle(x,y,r,color)
+function Canvas:PlotCircle(xc,yc,r,color)
 	local xn, yn, rs, ys
 	local xb, xe, yb, ye
 	local lastx = 0
@@ -277,7 +277,7 @@ function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
   end
 end
 
-function Canvas:PlotCircleArc(x,y,r,color,start,finish)
+function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
 	local xn, yn, rs, ys
 	local xb, xe, yb, ye
 	local lastx = 0
