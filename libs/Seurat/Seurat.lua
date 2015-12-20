@@ -207,7 +207,7 @@ function Canvas:PlotCircleFilled(xc,yc,r,color)
 	local xb, xe, yb, ye
 
 	rs = r ^ 2
-	for yn=r,0 do
+	for yn=r,0,-1 do
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
@@ -215,6 +215,7 @@ function Canvas:PlotCircleFilled(xc,yc,r,color)
 		xb = -xn + xc
 		xe = xn + xc
 		self:PlotHLine(xb, xe, yb, color)
+    self:PlotHLine(xb, xe, ye, color)
 	end
 	self:PlotHLine(-r+xc, r+xc, yc, color)
 end
@@ -225,7 +226,7 @@ function Canvas:PlotCircle(xc,yc,r,color)
 	local lastx = 0
 
 	rs = r ^ 2
-	for yn=r,0 do
+	for yn=r,0,-1 do
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
@@ -251,7 +252,7 @@ function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
 
   start,finish = math.minswap(start,finish)
 	rs = r ^ 2
-	for yn=r,0 do
+	for yn=r,0,-1 do
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
@@ -284,7 +285,7 @@ function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
 
   start,finish = math.minswap(start,finish)
 	rs = r ^ 2
-	for yn=r,0 do
+	for yn=r,0,-1 do
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
