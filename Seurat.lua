@@ -270,12 +270,6 @@ function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
       end
     end
 	end
-  for x=-r,r do
-    c = math.atan2(x,0) + math.pi
-    if c >= start and c <= finish then
-      self:PlotPoint(x,yc,color)
-    end
-  end
 end
 
 function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
