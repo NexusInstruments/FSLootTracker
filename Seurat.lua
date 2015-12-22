@@ -213,7 +213,7 @@ function Canvas:PlotCircleFilled(xc,yc,r,color)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		xb = -xn + xc
 		xe = xn + xc
 		self:PlotHLine(xb, xe, yb, color)
@@ -232,7 +232,7 @@ function Canvas:PlotCircle(xc,yc,r,color)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		if lastx > xn then
 			lastx = xn
 		end
@@ -258,7 +258,7 @@ function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		xb = -xn + xc
 		xe = xn + xc
     for x=-xn,xn do
@@ -285,7 +285,7 @@ function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		if lastx > xn then
 			lastx = xn
 		end
@@ -309,14 +309,14 @@ function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
 		end
 		lastx = xn + 1
 	end
-  c1 = math.atan2(-r,0) + math.pi
-  c2 = math.atan2(r,0) + math.pi
-  if c1 >= start and c1 <= finish then
-    self:PlotPoint(-r + xc, yc, color)
-  end
-  if c2 >= start and c2 <= finish then
-    self:PlotPoint(r + xc, yc, color)
-  end
+  -- c1 = math.atan2(-r,0) + math.pi
+  -- c2 = math.atan2(r,0) + math.pi
+  -- if c1 >= start and c1 <= finish then
+  --   self:PlotPoint(-r + xc, yc, color)
+  -- end
+  -- if c2 >= start and c2 <= finish then
+  --   self:PlotPoint(r + xc, yc, color)
+  -- end
 end
 
 function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
