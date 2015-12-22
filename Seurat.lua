@@ -120,6 +120,7 @@ function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
 	end
 
 	-- Initialize the buffer
+  self:SetBGColor(self.state.canvas.bgColor)
 	self:ClearBuffer()
 	self.state.timer.id = "Seurat_Canvas_" .. self.state.canvas.id
 	-- Setup Redraw Timer
@@ -142,8 +143,9 @@ function Canvas:ClearBuffer()
 	end
 end
 
-function Canvas:SetBGColor()
-
+function Canvas:SetBGColor(color)
+  self.state.canvas.bgColor = ApolloColor.new(color)
+	self.state.wnd:SetBGColor(self.state.canvas.bgColor)
 end
 
 function Canvas:PlotPoint(x,y,color)
@@ -449,6 +451,11 @@ function Canvas:RenderH()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
+            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+              active = false
+            else
+              active = true
+            end
 						self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
 					end
 				end
@@ -477,6 +484,11 @@ function Canvas:RenderV()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
+            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+              active = false
+            else
+              active = true
+            end
 						self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
 					end
 				end
