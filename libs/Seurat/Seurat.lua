@@ -120,6 +120,7 @@ function Canvas:Init(canvasId, canvasWnd, scale, quietMode)
 	end
 
 	-- Initialize the buffer
+  self:SetBGColor(self.state.canvas.bgColor)
 	self:ClearBuffer()
 	self.state.timer.id = "Seurat_Canvas_" .. self.state.canvas.id
 	-- Setup Redraw Timer
@@ -142,8 +143,9 @@ function Canvas:ClearBuffer()
 	end
 end
 
-function Canvas:SetBGColor()
-
+function Canvas:SetBGColor(color)
+  self.state.canvas.bgColor = ApolloColor.new(color)
+	self.state.wnd:SetBGColor(self.state.canvas.bgColor)
 end
 
 function Canvas:PlotPoint(x,y,color)
@@ -211,7 +213,7 @@ function Canvas:PlotCircleFilled(xc,yc,r,color)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		xb = -xn + xc
 		xe = xn + xc
 		self:PlotHLine(xb, xe, yb, color)
@@ -230,7 +232,7 @@ function Canvas:PlotCircle(xc,yc,r,color)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		if lastx > xn then
 			lastx = xn
 		end
@@ -256,7 +258,7 @@ function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		xb = -xn + xc
 		xe = xn + xc
     for x=-xn,xn do
@@ -270,12 +272,6 @@ function Canvas:PlotCircleWedge(xc,yc,r,color,start,finish)
       end
     end
 	end
-  for x=-r,r do
-    c = math.atan2(x,0) + math.pi
-    if c >= start and c <= finish then
-      self:PlotPoint(x,yc,color)
-    end
-  end
 end
 
 function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
@@ -289,7 +285,7 @@ function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
 		yb = -yn + yc
 		ye = yn + yc
 		ys = yn ^ 2
-		xn = math.round(math.sqrt(rs - ys))
+		xn = math.ceil(math.sqrt(rs - ys))
 		if lastx > xn then
 			lastx = xn
 		end
@@ -313,14 +309,14 @@ function Canvas:PlotCircleArc(xc,yc,r,color,start,finish)
 		end
 		lastx = xn + 1
 	end
-  c1 = math.atan2(-r,0) + math.pi
-  c2 = math.atan2(r,0) + math.pi
-  if c1 >= start and c1 <= finish then
-    self:PlotPoint(-r + xc, yc, color)
-  end
-  if c2 >= start and c2 <= finish then
-    self:PlotPoint(r + xc, yc, color)
-  end
+  -- c1 = math.atan2(-r,0) + math.pi
+  -- c2 = math.atan2(r,0) + math.pi
+  -- if c1 >= start and c1 <= finish then
+  --   self:PlotPoint(-r + xc, yc, color)
+  -- end
+  -- if c2 >= start and c2 <= finish then
+  --   self:PlotPoint(r + xc, yc, color)
+  -- end
 end
 
 function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
@@ -455,6 +451,11 @@ function Canvas:RenderH()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
+            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+              active = false
+            else
+              active = true
+            end
 						self:AddPixie(currentPixieX * self.state.canvas.scale, y * self.state.canvas.scale, x * self.state.canvas.scale, (y+1) * self.state.canvas.scale, lastColor, active)
 					end
 				end
@@ -483,6 +484,11 @@ function Canvas:RenderV()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
+            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+              active = false
+            else
+              active = true
+            end
 						self:AddPixie(x * self.state.canvas.scale, currentPixieY * self.state.canvas.scale, (x+1) * self.state.canvas.scale, y * self.state.canvas.scale, lastColor, active)
 					end
 				end
