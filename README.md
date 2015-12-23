@@ -36,7 +36,9 @@ To overcome these challenges a number of inventive solutions had to be developed
 ```
 * The default redraw time and batching values should be sufficient for most situations. However ```Canvas:SetBatchSize(integer)``` and ```Canvas:SetRedrawRefreshTimer(float)``` are available to tweak. Remember that some computers are slower, err on the side of caution.
 
+## Dependencies
+* SimpleUtils  ( https://github.com/NexusInstruments/SimpleUtils )
 
+##License
 Licensed under MIT License
-
 Copyright (c) 2015 NexusInstruments
