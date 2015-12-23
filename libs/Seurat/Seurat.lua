@@ -145,7 +145,7 @@ end
 
 function Canvas:SetBGColor(color)
   self.state.canvas.bgColor = ApolloColor.new(color)
-	self.state.canvs.wnd:SetBGColor(self.state.canvas.bgColor)
+	self.state.canvas.wnd:SetBGColor(self.state.canvas.bgColor)
 end
 
 function Canvas:PlotPoint(x,y,color)
