@@ -464,7 +464,7 @@ function Canvas:RenderH()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
-            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+            if self.state.canvas.bgColor.IsSameColorAs(ApolloColor.new(lastColor)) then
               active = false
             else
               active = true
@@ -497,7 +497,7 @@ function Canvas:RenderV()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
-            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+            if self.state.canvas.bgColor.IsSameColorAs(ApolloColor.new(lastColor)) then
               active = false
             else
               active = true
