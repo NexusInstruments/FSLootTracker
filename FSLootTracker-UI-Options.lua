@@ -34,7 +34,7 @@ function FSLootTracker:OnOptionsSave( wndHandler, wndControl, eMouseButton )
   -- Tab1
   self.settings.options.defaultCost = self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):GetText()
   self.settings.options.persistSession = self.state.windows.options:FindChild("TabWindow1"):FindChild("PersistButton"):IsChecked()
-  self.settings.options.debug = self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):IsChecked()
+  self.settings.user.debug = self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):IsChecked()
   self.settings.options.exportFormat = self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):GetData()
   self.settings.options.defaultCost = self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):GetText()
   if self.state.windows.options:FindChild("TabWindow1"):FindChild("12h"):IsChecked() then
