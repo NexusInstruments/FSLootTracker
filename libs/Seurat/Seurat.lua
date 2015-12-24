@@ -27,7 +27,7 @@ local tCanvasDefaultState = {
 	canvas = {
 		id = "",
 		wnd = nil,
-		bgColor = "00000000",
+		bgColor = "FF000000",
 		scale = 1,
 		width = 0,
 		height = 0
@@ -180,14 +180,27 @@ function Canvas:PlotVLine(x,y1,y2,color)
 end
 
 function Canvas:PlotLine(x1,y1,x2,y2,color)
+  local x = x1
 	local y = y1
 	local dx = x2-x1
 	local dy = y2-y1
 	local m = dy / dx
-	for c=x1,x2 do
-		self:PlotPoint(c,math.round(y),color)
-		y = y + m
-	end
+  if dx > dy then
+    m = dy / dx
+    for c=x1,x2 do
+		  self:PlotPoint(c,math.ceil(y),color)
+      y = y + m
+    end
+  else
+    m = dx / dy
+    if dy == 0 then
+      return
+    end
+    for c=y1,y2 do
+		  self:PlotPoint(math.ceil(x),c,color)
+      x = x + m
+    end
+  end
 end
 
 function Canvas:PlotRectFilled(x1,y1,x2,y2,color)
@@ -328,7 +341,7 @@ function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
 
 	dy = y2 - y1
 	dx = x2 - x1
-	if dy == 0 then
+	if dx == 0 then
 		m1 = 0
 	else
 		m1 = dy / dx
@@ -336,7 +349,7 @@ function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
 
 	dy = y3 - y1
 	dx = x3 - x1
-	if dy == 0 then
+	if dx == 0 then
 		m2 = 0
 	else
 		m2 = dy / dx
@@ -344,7 +357,7 @@ function Canvas:PlotTriFilled(x1,y1,x2,y2,x3,y3,color)
 
 	dy = y3 - y2
 	dx = x3 - x2
-	if dy == 0 then
+	if dx == 0 then
 		m3 = 0
 	else
 		m3 = dy / dx
@@ -451,7 +464,7 @@ function Canvas:RenderH()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
-            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+            if self.state.canvas.bgColor.IsSameColorAs(ApolloColor.new(lastColor)) then
               active = false
             else
               active = true
@@ -484,7 +497,7 @@ function Canvas:RenderV()
 					-- Compare lastColor with background color -- if the same mark active false
 					-- End previous
           if lastColor ~= -1 then
-            if self.state.canvas.bgColor.IsSameColorAs(lastColor) then
+            if self.state.canvas.bgColor.IsSameColorAs(ApolloColor.new(lastColor)) then
               active = false
             else
               active = true
