@@ -364,7 +364,7 @@ end
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootedItem(itemInstance, itemCount)
   --queue recently added items
-  self:Debug("Item Looted: " .. itemInstance:GetName())
+  self:Debug("Item Looted: " .. itemInstance:GetName(), "Items")
   self:CacheItem(itemInstance)
   table.insert(self.state.listItems.lootQueue, self:GetLootItemEventData(itemInstance, itemCount, "Dropped", strPlayerName, nil))
   self.state.lastTimeAdded = GameLib.GetGameTime()
@@ -374,7 +374,7 @@ end
 -- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
-  self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner)
+  self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner, "Items")
   if strWinner ~= GameLib.GetPlayerUnit():GetName() then
     self:CacheItem(itemLooted)
     table.insert(self.state.listItems.lootQueue, self:GetLootItemEventData(itemLooted, 1, "Rolled", strWinner, bNeed))
@@ -386,7 +386,7 @@ end
 -- FSLootTracker OnLootAssigned (MasterLooting)
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
-  self:Debug("Item Assigned: " .. itemInstance:GetName() .. " to " .. strLooter)
+  self:Debug("Item Assigned: " .. itemInstance:GetName() .. " to " .. strLooter, "Items")
   -- Only Track this event if the looter isn't the player running the addon
   -- Since this will be caught by the onLootItem event automatically
   if strLooter ~= GameLib.GetPlayerUnit():GetName() then
@@ -424,11 +424,11 @@ function FSLootTracker:AddQueuedItem()
   -- gather our entryData we need
   local tQueuedData = self.state.listItems.lootQueue[1]
   table.remove(self.state.listItems.lootQueue, 1)
-  self:Debug("Item Queued")
+  self:Debug("Item Queued", "Items")
   --Utils:printProps(tQueuedData)
 
   if tQueuedData == nil then
-    self:Debug("Item is null")
+    self:Debug("Item is null", "Items")
     return
   end
 
@@ -446,7 +446,7 @@ function FSLootTracker:AddQueuedItem()
 
   -- push this item on the end of the table
   if tQueuedData.recordType == self.tDataTypes.item then
-    self:Debug("Item was added")
+    self:Debug("Item was added", "Items")
     local iQuality = tQueuedData.quality
     local iSourceType = tQueuedData.sourceType
     -- Only add items of quality and source type being tracked
@@ -459,12 +459,12 @@ function FSLootTracker:AddQueuedItem()
       self:RefreshStats()
     end
   elseif tQueuedData.recordType == self.tDataTypes.money then
-    self:Debug("Money was added")
+    self:Debug("Money was added", "Money")
     -- Add to total earn if actual money
     table.insert(self.state.listItems.money, tQueuedData)
     self:UpdateStats(tQueuedData)
   else
-    self:Debug("Unknown type")
+    self:Debug("Unknown type", "Generic")
   end
   self.state.updateCount = self.state.updateCount + 1
   -- Only Update the tracked loot once the queue is empty
@@ -806,7 +806,7 @@ function FSLootTracker:UpdateStats(addMoney)
     timediff = os.difftime(self.state.lastLoot, self.state.firstLoot)
   end
 
-  --self:Debug("Adding Money: " .. addMoney.moneyAmount)
+  self:Debug("Adding Money: " .. addMoney.moneyAmount, "Money")
   local m = self.state.stats[addMoney.moneyType]
 
   if m == nil then
@@ -935,7 +935,7 @@ end
 -----------------------------------------------------------------------------------------------
 -- add an item into the item list
 function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
-  self:Debug("Item Add Called for (" .. item.itemID .. ") x" .. item.count)
+  self:Debug("Item Add Called for (" .. item.itemID .. ") x" .. item.count, "ListRebuilds")
   -- load the window item for the list item
   local wnd = Apollo.LoadForm(self.xmlDoc, "ListItem", self.state.windows.ItemList, self)
   --wndFlyoutBtn = wnd:FindChild("ContextButton")
@@ -1035,7 +1035,7 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
     -- keep track of the window item created
     table.insert(self.state.windows.itemWindows, wnd)
     --self.state.windows.itemWindows[self.curItemCount] = wnd
-    --self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount)
+    self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount, "ListRebuilds")
   end
 end
 
@@ -1043,7 +1043,7 @@ end
 -- AddMoney Functions
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:AddMoney(idx, money)
-  self:Debug("Money Add Called for " .. money.moneyAmount)
+  self:Debug("Money Add Called for " .. money.moneyAmount, "ListRebuilds")
   -- load the window item for the list item
   local wnd = Apollo.LoadForm(self.xmlDoc, "ListMoney", self.state.windows.MoneyList, self)
 
@@ -1064,7 +1064,7 @@ function FSLootTracker:AddMoney(idx, money)
   end
 
   wnd:SetData(idx)
-  --self:Debug("List Money created for item " .. wnd:GetData() .. " : " .. self.state.curMoneyCount)
+  self:Debug("List Money created for item " .. wnd:GetData() .. " : " .. self.state.curMoneyCount, "ListRebuilds")
 
   -- keep track of the window item created
   table.insert(self.state.windows.moneyWindows, wnd)
@@ -1113,6 +1113,13 @@ function FSLootTracker:OnRestore(eType, tSavedData)
     if self.settings.version ~= FSLOOTTRACKER_CURRENT_VERSION then
       -- reset main window position
       self.settings.positions.main = nil
+    end
+    -- Convert old user debug setting
+    if type(self.settings.user.debug) == "boolean" then
+      local temp = self.settings.user.debug
+      self.settings.user.debug = {}
+      self:RecursiveLoad(tDefaultSettings.user.debug, self.settings.user.debug)
+      self.settings.user.debug.enabled = temp
     end
 
     -- Now that we've turned the save data into the most recent version, set it
