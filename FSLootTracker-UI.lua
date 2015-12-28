@@ -87,12 +87,14 @@ function FSLootTracker:OnCurrencyLogClosed( wndHandler, wndControl )
   self:SaveMoneyLogLocation()
   self.state.windows.moneyLog:Close() -- hide the window
   self.state.isMoneyLogOpen = false
+  self.state.windows.MoneyWindow:FindChild("MoneyStatsTitle"):FindChild("MoneyLogButton"):SetChecked(false)
 end
 
 function FSLootTracker:OnCurrencyLogCancel( wndHandler, wndControl, eMouseButton )
   self:SaveMoneyLogLocation()
   self.state.windows.moneyLog:Close() -- hide the window
   self.state.isMoneyLogOpen = false
+  self.state.windows.MoneyWindow:FindChild("MoneyStatsTitle"):FindChild("MoneyLogButton"):SetChecked(false)
 end
 
 function FSLootTracker:OnShowMoneyLog( wndHandler, wndControl, eMouseButton )
@@ -107,6 +109,12 @@ function FSLootTracker:OnShowMoneyLog( wndHandler, wndControl, eMouseButton )
   -- Rebuild List Optimization goes here
   self.state.windows.moneyLog:Show(true, true)
   self.state.isMoneyLogOpen = true
+end
+
+function FSLootTracker:OnShowMoneyLogChecked( wndHandler, wndControl, eMouseButton )
+  local checked = wndControl:IsChecked()
+  self.state.isMoneyLogOpen = checked
+  self.state.windows.moneyLog:Show(self.state.isMoneyLogOpen)
 end
 
 function FSLootTracker:SaveMoneyLogLocation()
