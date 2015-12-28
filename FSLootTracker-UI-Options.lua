@@ -34,7 +34,7 @@ function FSLootTracker:OnOptionsSave( wndHandler, wndControl, eMouseButton )
   -- Tab1
   self.settings.options.defaultCost = self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):GetText()
   self.settings.options.persistSession = self.state.windows.options:FindChild("TabWindow1"):FindChild("PersistButton"):IsChecked()
-  self.settings.user.debug = self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):IsChecked()
+  self.settings.user.debug.enabled = self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):IsChecked()
   self.settings.options.exportFormat = self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):GetData()
   self.settings.options.defaultCost = self.state.windows.options:FindChild("TabWindow1"):FindChild("ItemCost"):FindChild("OptionsConfigureCostsEditBox"):GetText()
   if self.state.windows.options:FindChild("TabWindow1"):FindChild("12h"):IsChecked() then
@@ -53,6 +53,16 @@ function FSLootTracker:OnOptionsSave( wndHandler, wndControl, eMouseButton )
   for k,v in pairs(self.settings.options.sourceFilters) do
     self.settings.options.sourceFilters[k] = self.state.windows.optionsTrackedSources:FindChild(self.tLootSourcesNames[k]):IsChecked()
   end
+
+  -- Tab5
+  self.settings.user.debug.flags["Items"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugItemsButton"):IsChecked()
+  self.settings.user.debug.flags["Money"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugMoneyButton"):IsChecked()
+  self.settings.user.debug.flags["Kills"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugKillsButton"):IsChecked()
+  self.settings.user.debug.flags["Encounters"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugEncountersButton"):IsChecked()
+  self.settings.user.debug.flags["ListRebuilds"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugListRebuildsButton"):IsChecked()
+  self.settings.user.debug.flags["Cache"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugCacheButton"):IsChecked()
+  self.settings.user.debug.flags["Generic"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugGenericButton"):IsChecked()
+
   self:CloseOptions()
 end
 
@@ -213,7 +223,7 @@ end
 
 function FSLootTracker:RefreshUIOptions()
   -- Set Tabs
-  for i=1,4 do
+  for i=1,5 do
     tab = self.state.windows.optionsTabs:FindChild("" .. i):FindChild("BG")
     tabWindow = self.state.windows.options:FindChild("TabWindow" .. i)
     if i == self.state.curOptionTab then
@@ -230,7 +240,7 @@ function FSLootTracker:RefreshUIOptions()
   -- Set Options
   -- Tab1
   self.state.windows.options:FindChild("TabWindow1"):FindChild("PersistButton"):SetCheck(self.settings.options.persistSession)
-  self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):SetCheck(self.settings.user.debug)
+  self.state.windows.options:FindChild("TabWindow1"):FindChild("DebugButton"):SetCheck(self.settings.user.debug.enabled)
   self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):SetText(self.tExportFormatNames[self.settings.options.exportFormat])
   self.state.windows.options:FindChild("TabWindow1"):FindChild("Export"):FindChild("ExportSelection"):SetData(self.settings.options.exportFormat)
   self.state.windows.options:FindChild("TabWindow1"):FindChild(self.settings.options.timeFormat):SetCheck(true)
@@ -251,6 +261,15 @@ function FSLootTracker:RefreshUIOptions()
   for k,v in pairs(self.settings.options.sourceFilters) do
     self.state.windows.optionsTrackedSources:FindChild(self.tLootSourcesNames[k]):SetCheck(v)
   end
+
+  -- Tab5
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugItemsButton"):SetCheck(self.settings.user.debug.flags["Items"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugMoneyButton"):SetCheck(self.settings.user.debug.flags["Money"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugKillsButton"):SetCheck(self.settings.user.debug.flags["Kills"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugEncountersButton"):SetCheck(self.settings.user.debug.flags["Encounters"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugListRebuildsButton"):SetCheck(self.settings.user.debug.flags["ListRebuilds"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugCacheButton"):SetCheck(self.settings.user.debug.flags["Cache"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugGenericButton"):SetCheck(self.settings.user.debug.flags["Generic"])
 end
 
 ---------------------------------------------------------------------------------------------------

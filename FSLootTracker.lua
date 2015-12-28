@@ -67,7 +67,18 @@ local tDefaultSettings = {
   dataVersion = FSDataVersion,
   version = FSLOOTTRACKER_CURRENT_VERSION,
   user = {
-    debug = false,
+    debug = {
+      enabled = false,
+      flags = {
+        ["Items"] = false,
+        ["Money"] = false,
+        ["Kills"] = false,
+        ["Encounters"] = false,
+        ["ListRebuilds"] = false,
+        ["Cache"] = false,
+        ["Generic"] = true
+      }
+    },
     ignored = {},         -- keep track of items that should be filtered
     watched = {}          -- keep track of items that should be alerted
   },
@@ -214,10 +225,16 @@ local tDefaultState = {
   questTrack = nil
 }
 
-function FSLootTracker:Debug( message )
+function FSLootTracker:Debug( message, level )
+  if not level then
+    level = "Generic"
+  end
+
   if self.settings then
-    if self.settings.user.debug then
-      Utils:debug(message)
+    if self.settings.user.debug.enabled then
+      if self.settings.user.debug.flags[level] then
+        Utils:debug(message)
+      end
     end
   end
 end
