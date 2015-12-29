@@ -76,7 +76,8 @@ local tDefaultSettings = {
         ["Encounters"] = false,
         ["ListRebuilds"] = false,
         ["Cache"] = false,
-        ["Generic"] = true
+        ["Generic"] = true,
+        ["Queue"] = false
       }
     },
     ignored = {},         -- keep track of items that should be filtered
@@ -424,11 +425,11 @@ function FSLootTracker:AddQueuedItem()
   -- gather our entryData we need
   local tQueuedData = self.state.listItems.lootQueue[1]
   table.remove(self.state.listItems.lootQueue, 1)
-  self:Debug("Item Queued", "Items")
+  self:Debug("Processing next queued item", "Queue")
   --Utils:printProps(tQueuedData)
 
   if tQueuedData == nil then
-    self:Debug("Item is null", "Items")
+    self:Debug("No Item found in queue", "Queue")
     return
   end
 
@@ -452,6 +453,8 @@ function FSLootTracker:AddQueuedItem()
     -- Only add items of quality and source type being tracked
     if self.settings.options.qualityFilters[iQuality] == true and self.settings.options.sourceFilters[iSourceType] == true then
       table.insert(self.state.listItems.items, tQueuedData)
+    else
+      self:Debug("Item was filtered", "Items")
     end
     -- Track Junk value
     if iQuality == Item.CodeEnumItemQuality.Inferior then
@@ -763,20 +766,28 @@ function FSLootTracker:RebuildLists()
   local itemVScrollPos = self.state.windows.ItemList:GetVScrollPos()
   local moneyVScrollPos = self.state.windows.MoneyList:GetVScrollPos()
 
+  self:Debug("Emptying Lists", "ListRebuilds")
   self:EmptyLists()
+  self:Debug("Rebuilding Items", "ListRebuilds")
   for idx,item in ipairs(self.state.listItems.items) do
     -- Check if item is ignored and delete if it is
     if self.settings.user.ignored[item.itemID] ~= nil then
       self.state.listItems.items[idx] = nil
+      self:Debug("Item Filtered on Ignore List", "Items")
     else
       self:AddItem(idx, item)
+      self:Debug("Item Window Added", "Items")
     end
   end
+  self:Debug("Rebuilding Money", "ListRebuilds")
   for idx,money in ipairs(self.state.listItems.money) do
     self:AddMoney(idx, money)
+    self:Debug("Money Window Added", "Money")
   end
   self.state.updateCount = 0
+  self:Debug("Rebuilding Export List", "ListRebuilds")
   self:RebuildExportList()
+  self:Debug("Refreshing Displays", "ListRebuilds")
   self:RefreshListDisplays()
   self:RefreshStats()
 
@@ -1035,7 +1046,7 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
     -- keep track of the window item created
     table.insert(self.state.windows.itemWindows, wnd)
     --self.state.windows.itemWindows[self.curItemCount] = wnd
-    self:Debug("List Item created for item " .. wnd:GetData() .. " : " .. self.curItemCount, "ListRebuilds")
+    self:Debug("List Item created for item " .. wnd:GetData(), "ListRebuilds")
   end
 end
 

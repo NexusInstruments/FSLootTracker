@@ -62,6 +62,7 @@ function FSLootTracker:OnOptionsSave( wndHandler, wndControl, eMouseButton )
   self.settings.user.debug.flags["ListRebuilds"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugListRebuildsButton"):IsChecked()
   self.settings.user.debug.flags["Cache"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugCacheButton"):IsChecked()
   self.settings.user.debug.flags["Generic"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugGenericButton"):IsChecked()
+  self.settings.user.debug.flags["Queue"] = self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugQueueButton"):IsChecked()
 
   self:CloseOptions()
 end
@@ -270,6 +271,7 @@ function FSLootTracker:RefreshUIOptions()
   self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugListRebuildsButton"):SetCheck(self.settings.user.debug.flags["ListRebuilds"])
   self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugCacheButton"):SetCheck(self.settings.user.debug.flags["Cache"])
   self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugGenericButton"):SetCheck(self.settings.user.debug.flags["Generic"])
+  self.state.windows.options:FindChild("TabWindow5"):FindChild("DebugQueueButton"):SetCheck(self.settings.user.debug.flags["Queue"])
 end
 
 ---------------------------------------------------------------------------------------------------
