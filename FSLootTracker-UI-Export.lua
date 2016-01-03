@@ -11,7 +11,7 @@ local Utils = Apollo.GetPackage("SimpleUtils").tPackage
 -- rebuild list used to export the data
 function FSLootTracker:RebuildExportList()
   self.state.listItems.itemsExport = {}
-  for idx, itemInstance in ipairs(self.state.listItems.items) do
+  for idx, itemInstance in pairs(self.state.listItems.items) do
     local item = self.state.cache.ItemCache:GetValue(itemInstance.itemID)
     if item then
       local itemName = item.name
@@ -104,7 +104,7 @@ end
 
 function FSLootTracker:DoBBCodeExport()
   local str = ""
-  for i,v in ipairs(self.state.listItems.itemsExport) do
+  for i,v in pairs(self.state.listItems.itemsExport) do
     local time = v.timeReported
     str = str .. "(" .. Chronology:GetFormattedDateTime(time) .. ") [b]" .. v.source .. "[/b] - " .. v.looter .. " - [url=" .. v.jabbitLink .. "]" .. v.itemName .. "[/url]\n"
   end
@@ -113,7 +113,7 @@ end
 
 function FSLootTracker:DoHTMLExport()
   local str = "<html><body><table>\n<tr><th>TIMESTAMP</th><th>ID</th><th>NAME</th><th>COUNT</th><th>LOOTER</th><th>SOURCE</th><th>COST</th><th>QUALITY</th><th>ILVL</th><th>TYPE</th></tr>\n"
-  for i,v in ipairs(self.state.listItems.itemsExport) do
+  for i,v in pairs(self.state.listItems.itemsExport) do
     local time = v.timeReported
     str = str .. "<tr><td>" .. Chronology:GetFormattedDateTime(time) .. "</td><td>" .. v.itemID .. "</td><td><a href='" .. v.jabbitLink .. "'>" .. v.itemName .. "</a></td><td>" .. v.count .. "</td><td>" .. v.looter .. "</td><td>" .. v.source .. "</td><td>" .. v.cost .. "</td><td>" .. v.itemQuality .. "</td><td>" .. v.itemILvl .. "</td><td>" .. v.itemType .. "</td></tr>\n"
   end
@@ -123,7 +123,7 @@ end
 
 function FSLootTracker:DoCSVExport()
   local str = "TIMESTAMP, ID, NAME, COUNT, LOOTER, SOURCE, COST, QUALITY, ILVL, TYPE\n"
-  for i,v in ipairs(self.state.listItems.itemsExport) do
+  for i,v in pairs(self.state.listItems.itemsExport) do
     local time = v.timeReported
     str = str .. "" .. Chronology:GetFormattedDateTime(time) .. ", " .. v.itemID .. ", " .. v.itemName .. ", " .. v.count .. ", " .. v.looter .. ", " .. v.source .. ", " .. v.cost .. ", " .. v.itemQuality .. ", " .. v.itemILvl .. ", " .. v.itemType .. "\n"
   end

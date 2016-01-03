@@ -71,7 +71,7 @@ function FSLootTracker:OnToggleShowTrackedLoot()
 end
 
 function FSLootTracker:EmptyTrackedWatches()
-	for idx,wnd in ipairs(self.state.windows.trackerObjectiveWindows) do
+	for idx,wnd in pairs(self.state.windows.trackerObjectiveWindows) do
 		wnd:Destroy()
 	end
 	self.state.windows.trackerObjectiveList:DestroyChildren()
@@ -96,7 +96,7 @@ function FSLootTracker:AddTrackedWatch(id)
 end
 
 function FSLootTracker:UpdateTrackedWatches()
-	for idx,wnd in ipairs(self.state.windows.trackerObjectiveWindows) do
+	for idx,wnd in pairs(self.state.windows.trackerObjectiveWindows) do
 		id = wnd:GetData()
 		name = self.settings.user.watched[id]
 		count = self.state.listItems.watchedItemCounts[id]

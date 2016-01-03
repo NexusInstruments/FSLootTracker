@@ -742,10 +742,10 @@ end
 -----------------------------------------------------------------------------------------------
 function FSLootTracker:EmptyLists()
   self.state.windows.contextFlyout:Show(false)
-  for idx,wnd in ipairs(self.state.windows.itemWindows) do
+  for idx,wnd in pairs(self.state.windows.itemWindows) do
     wnd:Destroy()
   end
-  for idx,wnd in ipairs(self.state.windows.moneyWindows) do
+  for idx,wnd in pairs(self.state.windows.moneyWindows) do
     wnd:Destroy()
   end
   for id,name in pairs(self.settings.user.watched) do
@@ -769,7 +769,7 @@ function FSLootTracker:RebuildLists()
   self:Debug("Emptying Lists", "ListRebuilds")
   self:EmptyLists()
   self:Debug("Rebuilding Items", "ListRebuilds")
-  for idx,item in ipairs(self.state.listItems.items) do
+  for idx,item in pairs(self.state.listItems.items) do
     -- Check if item is ignored and delete if it is
     if self.settings.user.ignored[item.itemID] ~= nil then
       self.state.listItems.items[idx] = nil
@@ -780,7 +780,7 @@ function FSLootTracker:RebuildLists()
     end
   end
   self:Debug("Rebuilding Money", "ListRebuilds")
-  for idx,money in ipairs(self.state.listItems.money) do
+  for idx,money in pairs(self.state.listItems.money) do
     self:AddMoney(idx, money)
     self:Debug("Money Window Added", "Money")
   end
@@ -800,7 +800,7 @@ end
 -- clear the item list
 function FSLootTracker:DestroyItemList()
   self.state.listItems.items = {}
-  for idx,wnd in ipairs(self.state.windows.moneyWindows) do
+  for idx,wnd in pairs(self.state.windows.moneyWindows) do
     wnd:Destroy()
     table.remove(self.state.windows.moneyWindows, 1)
   end
@@ -896,7 +896,7 @@ end
 function FSLootTracker:DestroyMoneyList()
   -- clear the list money array
   self.state.listItems.money = {}
-  for idx,wnd in ipairs(self.state.windows.itemWindows) do
+  for idx,wnd in pairs(self.state.windows.itemWindows) do
     wnd:Destroy()
     table.remove(self.state.windows.itemWindows, 1)
   end
