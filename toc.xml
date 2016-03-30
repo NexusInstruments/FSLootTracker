@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Chronosis" APIVersion="11" Name="FSLootTracker" Description="A simple addon to track loot drops" Version="2.2.2">
+<Addon Author="Chronosis" APIVersion="12" Name="FSLootTracker" Description="A simple addon to track loot drops" Version="3.0.0">
     <Script Name="libs/SimpleUtils/SimpleUtils.lua"/>
     <Script Name="libs/SimpleCache/SimpleCache.lua"/>
     <Script Name="libs/JsonUtils/JsonUtils-1.0.lua"/>

@@ -16,7 +16,7 @@ function FSLootTracker:RebuildExportList()
     if item then
       local itemName = item.name
 
-      local jabbitLink = "http://www.jabbithole.com/items/" .. self:StripCharacters(itemName) .. "-" .. tostring(itemInstance.itemID)
+      local jabbitLink = "http://www.jabbithole.com/items/" .. self:StripCharacters(string.lower(itemName)) .. "-" .. tostring(itemInstance.itemID)
 
       local tNewEntry =
       {
