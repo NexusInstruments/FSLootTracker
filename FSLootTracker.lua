@@ -31,7 +31,7 @@ local Chronology = Apollo.GetPackage("Chronology").tPackage
 local Cache = Apollo.GetPackage("SimpleCache").tPackage
 local Seurat = Apollo.GetPackage("Seurat").tPackage
 
-local Major, Minor, Patch, Suffix = 3, 0, 0, 0  
+local Major, Minor, Patch, Suffix = 3, 0, 1, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "3.0"
 
@@ -386,13 +386,17 @@ end
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker OnLootAssigned (MasterLooting)
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:OnLootAssigned(itemInstance, strLooter)
+function FSLootTracker:OnLootAssigned(tLootInfo) --itemInstance, strLooter)
+  local itemInstance = tLootInfo.itemLoot
+	local strItem = tLootInfo.itemLoot:GetChatLinkString()
+	local nCount = tLootInfo.itemLoot:GetStackCount()
+  local strLooter = tLootInfo.strPlayer
   self:Debug("Item Assigned: " .. itemInstance:GetName() .. " to " .. strLooter, "Items")
   -- Only Track this event if the looter isn't the player running the addon
   -- Since this will be caught by the onLootItem event automatically
   if strLooter ~= GameLib.GetPlayerUnit():GetName() then
     self:CacheItem(itemInstance)
-    table.insert(self.state.listItems.lootQueue, self:GetLootItemEventData(itemInstance, 1, "Master", strLooter, nil))
+    table.insert(self.state.listItems.lootQueue, self:GetLootItemEventData(itemInstance, nCount, "Master", strLooter, nil))
     self.state.lastTimeAdded = GameLib.GetGameTime()
   end
 end
@@ -958,9 +962,9 @@ function FSLootTracker:AddItem(idx, item) --, count, looter, time, reportedTime)
     wnd:SetBGColor(ApolloColor.new("ff00ff00"))
     local c = self.state.listItems.watchedItemCounts[item.itemID]
     if c then
-      self.state.listItems.watchedItemCounts[item.itemID] = c + 1
+      self.state.listItems.watchedItemCounts[item.itemID] = c + item.count
     else
-      self.state.listItems.watchedItemCounts[item.itemID] = 1
+      self.state.listItems.watchedItemCounts[item.itemID] = item.count
     end
   end
 
