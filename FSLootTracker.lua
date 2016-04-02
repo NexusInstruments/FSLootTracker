@@ -31,7 +31,7 @@ local Chronology = Apollo.GetPackage("Chronology").tPackage
 local Cache = Apollo.GetPackage("SimpleCache").tPackage
 local Seurat = Apollo.GetPackage("Seurat").tPackage
 
-local Major, Minor, Patch, Suffix = 3, 0, 1, 0
+local Major, Minor, Patch, Suffix = 3, 0, 2, 0
 local FSLOOTTRACKER_CURRENT_VERSION = string.format("%d.%d.%d", Major, Minor, Patch)
 local FSDataVersion = "3.0"
 
@@ -374,11 +374,14 @@ end
 -----------------------------------------------------------------------------------------------
 -- FSLootTracker OnLootRollWon -- (For Winning Loot Roll) -- Hooked from NeedVsGreed
 -----------------------------------------------------------------------------------------------
-function FSLootTracker:OnLootRollWon(itemLooted, strWinner, bNeed)
-  self:Debug("Item Won: " .. itemLooted:GetName() .. " by " .. strWinner, "Items")
+function FSLootTracker:OnLootRollWon(tLootInfo) --(itemLooted, strWinner, bNeed)
+  local bNeed = tLootInfo.bNeed
+  local itemLooted = tLootInfo.itemLoot
+  local nCount = itemLooted:GetStackCount()
+  self:Debug("Item Won: " .. itemLooted:GetName() .. "x" .. nCount .. " by " .. strWinner, "Items")
   if strWinner ~= GameLib.GetPlayerUnit():GetName() then
     self:CacheItem(itemLooted)
-    table.insert(self.state.listItems.lootQueue, self:GetLootItemEventData(itemLooted, 1, "Rolled", strWinner, bNeed))
+    table.insert(self.state.listItems.lootQueue, self:GetLootItemEventData(itemLooted, nCount, "Rolled", strWinner, bNeed))
     self.state.lastTimeAdded = GameLib.GetGameTime()
   end
 end
