@@ -1,4 +1,8 @@
 <pre>
+Version 3.0.4
+* Fixed bug with closing money log
+* Fixed bug with selecting events in money log
+
 Version 3.0.3
 * Fixed bug with rolled loot capturing
 
