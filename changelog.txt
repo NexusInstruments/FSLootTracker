@@ -1,4 +1,7 @@
 <pre>
+Version 3.0.3
+* Fixed bug with rolled loot capturing
+
 Version 3.0.2
 * Updated tracking to capture count of items provided from API for rolled and master looted items.
 
