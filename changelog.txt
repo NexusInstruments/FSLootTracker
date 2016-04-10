@@ -1,4 +1,22 @@
 <pre>
+Version 3.0.3
+* Fixed bug with rolled loot capturing
+
+Version 3.0.2
+* Updated tracking to capture count of items provided from API for rolled and master looted items.
+
+Version 3.0.1
+* Fixed bug with new loot tracking in API 12
+
+Version 3.0.0
+* Updated to API Version 12
+* Changed money tracking to move to log
+* Added Tracked Loot and Ignored Loot lists
+* Tracked Loot is now tracked in the objective tracker
+* Loot Delete functionality now works correctly
+* Added Export formats CSV, HTML, and BBCode.
+* Updated Options screen to be more comprehensive
+
 Version 2.2.2
 * Fixed error with zones that return nil
 
