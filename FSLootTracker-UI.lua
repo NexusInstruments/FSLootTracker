@@ -85,31 +85,31 @@ end
 
 function FSLootTracker:OnCurrencyLogClosed( wndHandler, wndControl )
   self:SaveMoneyLogLocation()
-  self.state.windows.moneyLog:Close() -- hide the window
   self.state.isMoneyLogOpen = false
-  self.state.windows.MoneyWindow:FindChild("MoneyStatsTitle"):FindChild("MoneyLogButton"):SetChecked(false)
+  self.state.windows.moneyLog:Show(self.state.isMoneyLogOpen)
+  self.state.windows.MoneyWindow:FindChild("MoneyStatsTitle"):FindChild("MoneyLogButton"):SetCheck(self.state.isMoneyLogOpen)
 end
 
 function FSLootTracker:OnCurrencyLogCancel( wndHandler, wndControl, eMouseButton )
   self:SaveMoneyLogLocation()
-  self.state.windows.moneyLog:Close() -- hide the window
   self.state.isMoneyLogOpen = false
-  self.state.windows.MoneyWindow:FindChild("MoneyStatsTitle"):FindChild("MoneyLogButton"):SetChecked(false)
+  self.state.windows.moneyLog:Show(self.state.isMoneyLogOpen)
+  self.state.windows.MoneyWindow:FindChild("MoneyStatsTitle"):FindChild("MoneyLogButton"):SetCheck(self.state.isMoneyLogOpen)
 end
 
-function FSLootTracker:OnShowMoneyLog( wndHandler, wndControl, eMouseButton )
-  if not self.state.windows.moneyLog then
-    -- reload if it has somehow closed
-    self.state.windows.moneyLog = Apollo.LoadForm(self.xmlDoc, "MoneyLogWindow", nil, self)
-  end
-  if self.settings.positions.moneyLog then -- Only move if position exists
-    locSavedLoc = WindowLocation.new(self.settings.positions.moneyLog)
-    --self.state.windows.moneyLog:MoveToLocation(locSavedLoc)
-  end
-  -- Rebuild List Optimization goes here
-  self.state.windows.moneyLog:Show(true, true)
-  self.state.isMoneyLogOpen = true
-end
+-- function FSLootTracker:OnShowMoneyLog( wndHandler, wndControl, eMouseButton )
+--   if not self.state.windows.moneyLog then
+--     -- reload if it has somehow closed
+--     self.state.windows.moneyLog = Apollo.LoadForm(self.xmlDoc, "MoneyLogWindow", nil, self)
+--   end
+--   if self.settings.positions.moneyLog then -- Only move if position exists
+--     locSavedLoc = WindowLocation.new(self.settings.positions.moneyLog)
+--     --self.state.windows.moneyLog:MoveToLocation(locSavedLoc)
+--   end
+--   -- Rebuild List Optimization goes here
+--   self.state.windows.moneyLog:Show(true, true)
+--   self.state.isMoneyLogOpen = true
+-- end
 
 function FSLootTracker:OnShowMoneyLogChecked( wndHandler, wndControl, eMouseButton )
   local checked = wndControl:IsChecked()
